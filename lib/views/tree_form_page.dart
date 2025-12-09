@@ -48,132 +48,335 @@ class _TreeFormPageState extends State<TreeFormPage> {
   @override
   Widget build(BuildContext context) {
     final isEdit = formController.existing != null;
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
         title: Text(isEdit ? 'Ubah Data Pohon' : 'Tambah Data Pohon'),
+        elevation: 0,
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16),
-        child: Form(
-          key: _formKey,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                TextFormField(
-                  controller: _varietasController,
-                  decoration: const InputDecoration(
-                    labelText: 'Varietas',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) => value == null || value.isEmpty ? 'Wajib diisi' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _blokController,
-                  decoration: const InputDecoration(
-                    labelText: 'Blok',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) => value == null || value.isEmpty ? 'Wajib diisi' : null,
-                ),
-                const SizedBox(height: 12),
-                TextFormField(
-                  controller: _nomorController,
-                  decoration: const InputDecoration(
-                    labelText: 'Nomor Pohon',
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) => value == null || value.isEmpty ? 'Wajib diisi' : null,
-                ),
-                const SizedBox(height: 16),
-                Text('Ambil 4 Foto Pohon', style: Theme.of(context).textTheme.titleMedium),
-                const SizedBox(height: 8),
-                Obx(() {
-                  return GridView.builder(
-                    shrinkWrap: true,
-                    physics: const NeverScrollableScrollPhysics(),
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      mainAxisSpacing: 8,
-                      crossAxisSpacing: 8,
-                      childAspectRatio: 1,
+      body: Form(
+        key: _formKey,
+        child: SingleChildScrollView(
+          padding: const EdgeInsets.all(16),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              // Informasi Pohon Section
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
                     ),
-                    itemCount: 4,
-                    itemBuilder: (_, index) {
-                      final path = formController.photoPaths[index];
-                      return InkWell(
-                        onTap: () => _handleCapture(index),
-                        child: Container(
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
                           decoration: BoxDecoration(
-                            border: Border.all(color: Colors.green.shade300),
-                            borderRadius: BorderRadius.circular(12),
+                            color: colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(8),
                           ),
-                          child: path == null
-                              ? Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Icon(Icons.camera_alt, size: 32),
-                                    const SizedBox(height: 4),
-                                    Text('Foto ${index + 1}'),
-                                  ],
-                                )
-                              : Stack(
-                                  children: [
-                                    Positioned.fill(
-                                      child: ClipRRect(
-                                        borderRadius: BorderRadius.circular(12),
-                                        child: Image.file(
-                                          File(path),
-                                          fit: BoxFit.cover,
-                                        ),
-                                      ),
-                                    ),
-                                    Positioned(
-                                      right: 4,
-                                      top: 4,
-                                      child: InkWell(
-                                        onTap: () => formController.removePhoto(index),
-                                        child: Container(
-                                          decoration: BoxDecoration(
-                                            color: Colors.black.withOpacity(0.5),
-                                            borderRadius: BorderRadius.circular(20),
-                                          ),
-                                          padding: const EdgeInsets.all(4),
-                                          child: const Icon(Icons.close, color: Colors.white, size: 16),
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                          child: Icon(
+                            Icons.info_outline,
+                            color: colorScheme.primary,
+                            size: 20,
+                          ),
                         ),
-                      );
-                    },
-                  );
-                }),
-                const SizedBox(height: 16),
-                Obx(() {
-                  final allFilled = formController.photoPaths.every((p) => p != null);
-                  return SizedBox(
-                    width: double.infinity,
-                    child: ElevatedButton.icon(
-                      onPressed: formController.saving.value
-                          ? null
-                          : () async {
-                              if (!_formKey.currentState!.validate()) return;
-                              if (!allFilled) {
-                                Get.snackbar('Foto belum lengkap', 'Silakan ambil 4 foto terlebih dahulu');
-                                return;
-                              }
-                              await _handleSave();
-                            },
-                      icon: const Icon(Icons.save),
-                      label: Text(formController.saving.value ? 'Menyimpan...' : 'Simpan'),
+                        const SizedBox(width: 12),
+                        Text(
+                          'Informasi Pohon',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                  );
-                }),
-              ],
-            ),
+                    const SizedBox(height: 20),
+                    TextFormField(
+                      controller: _varietasController,
+                      decoration: const InputDecoration(
+                        labelText: 'Varietas Pohon',
+                        hintText: 'Contoh: Sawit',
+                        prefixIcon: Icon(Icons.park),
+                      ),
+                      validator: (value) => value == null || value.isEmpty ? 'Wajib diisi' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: TextFormField(
+                            controller: _blokController,
+                            decoration: const InputDecoration(
+                              labelText: 'Blok',
+                              hintText: 'A1',
+                              prefixIcon: Icon(Icons.grid_on),
+                            ),
+                            validator: (value) => value == null || value.isEmpty ? 'Wajib diisi' : null,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: TextFormField(
+                            controller: _nomorController,
+                            decoration: const InputDecoration(
+                              labelText: 'Nomor Pohon',
+                              hintText: '001',
+                              prefixIcon: Icon(Icons.numbers),
+                            ),
+                            validator: (value) => value == null || value.isEmpty ? 'Wajib diisi' : null,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 20),
+              
+              // Foto Section
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(8),
+                          decoration: BoxDecoration(
+                            color: Colors.blue.shade50,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(
+                            Icons.photo_camera,
+                            color: Colors.blue,
+                            size: 20,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Foto Pohon',
+                                style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Ambil 4 foto pohon dari berbagai sudut',
+                                style: TextStyle(
+                                  fontSize: 12,
+                                  color: Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 16),
+                    Obx(() {
+                      final photosList = formController.photoPaths.toList();
+                      return GridView.builder(
+                        shrinkWrap: true,
+                        physics: const NeverScrollableScrollPhysics(),
+                        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          mainAxisSpacing: 12,
+                          crossAxisSpacing: 12,
+                          childAspectRatio: 1,
+                        ),
+                        itemCount: 4,
+                        itemBuilder: (_, index) {
+                          final path = photosList[index];
+                          return Material(
+                            color: Colors.transparent,
+                            child: InkWell(
+                              onTap: () => _handleCapture(index),
+                              borderRadius: BorderRadius.circular(16),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: path != null ? Colors.green : Colors.grey.shade300,
+                                    width: 2,
+                                  ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  color: path == null ? Colors.grey[50] : null,
+                                ),
+                                child: path == null
+                                    ? Column(
+                                        mainAxisAlignment: MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            Icons.add_a_photo,
+                                            size: 40,
+                                            color: Colors.grey[400],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Foto ${index + 1}',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: Colors.grey[600],
+                                            ),
+                                          ),
+                                          Text(
+                                            'Tap untuk ambil',
+                                            style: TextStyle(
+                                              fontSize: 11,
+                                              color: Colors.grey[500],
+                                            ),
+                                          ),
+                                        ],
+                                      )
+                                    : Stack(
+                                        children: [
+                                          Positioned.fill(
+                                            child: ClipRRect(
+                                              borderRadius: BorderRadius.circular(14),
+                                              child: Image.file(
+                                                File(path),
+                                                fit: BoxFit.cover,
+                                              ),
+                                            ),
+                                          ),
+                                          Positioned(
+                                            top: 8,
+                                            right: 8,
+                                            child: InkWell(
+                                              onTap: () => formController.removePhoto(index),
+                                              child: Container(
+                                                decoration: BoxDecoration(
+                                                  color: Colors.red,
+                                                  borderRadius: BorderRadius.circular(20),
+                                                  boxShadow: [
+                                                    BoxShadow(
+                                                      color: Colors.black.withOpacity(0.3),
+                                                      blurRadius: 4,
+                                                    ),
+                                                  ],
+                                                ),
+                                                padding: const EdgeInsets.all(6),
+                                                child: const Icon(
+                                                  Icons.close,
+                                                  color: Colors.white,
+                                                  size: 16,
+                                                ),
+                                              ),
+                                            ),
+                                          ),
+                                          Positioned(
+                                            bottom: 8,
+                                            left: 8,
+                                            child: Container(
+                                              padding: const EdgeInsets.symmetric(
+                                                horizontal: 8,
+                                                vertical: 4,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: Colors.green,
+                                                borderRadius: BorderRadius.circular(8),
+                                              ),
+                                              child: Row(
+                                                mainAxisSize: MainAxisSize.min,
+                                                children: [
+                                                  const Icon(
+                                                    Icons.check_circle,
+                                                    color: Colors.white,
+                                                    size: 14,
+                                                  ),
+                                                  const SizedBox(width: 4),
+                                                  Text(
+                                                    'Foto ${index + 1}',
+                                                    style: const TextStyle(
+                                                      color: Colors.white,
+                                                      fontSize: 11,
+                                                      fontWeight: FontWeight.bold,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ),
+                                            ),
+                                          ),
+                                        ],
+                                      ),
+                              ),
+                            ),
+                          );
+                        },
+                      );
+                    }),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 24),
+              
+              // Save Button
+              Obx(() {
+                final photosList = formController.photoPaths.toList();
+                final isSaving = formController.saving.value;
+                final allFilled = photosList.every((p) => p != null);
+                return SizedBox(
+                  width: double.infinity,
+                  child: FilledButton.icon(
+                    onPressed: isSaving
+                        ? null
+                        : () async {
+                            if (!_formKey.currentState!.validate()) return;
+                            if (!allFilled) {
+                              Get.snackbar(
+                                'Foto Belum Lengkap',
+                                'Silakan ambil 4 foto terlebih dahulu',
+                                snackPosition: SnackPosition.BOTTOM,
+                                backgroundColor: Colors.orange,
+                                colorText: Colors.white,
+                                icon: const Icon(Icons.warning, color: Colors.white),
+                              );
+                              return;
+                            }
+                            await _handleSave();
+                          },
+                    style: FilledButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      backgroundColor: allFilled ? null : Colors.grey,
+                    ),
+                    icon: Icon(isSaving ? Icons.hourglass_empty : Icons.save),
+                    label: Text(
+                      isSaving ? 'Menyimpan...' : 'Simpan Data Pohon',
+                      style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                );
+              }),
+              const SizedBox(height: 16),
+            ],
           ),
         ),
       ),

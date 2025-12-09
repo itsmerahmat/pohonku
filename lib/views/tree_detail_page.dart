@@ -14,22 +14,27 @@ class TreeDetailPage extends StatelessWidget {
     final tree = Get.arguments as TreeModel;
     final controller = Get.find<TreeController>();
     final formatter = DateFormat('dd MMM yyyy HH:mm');
+    final colorScheme = Theme.of(context).colorScheme;
+    
     return Scaffold(
+      backgroundColor: Colors.grey[50],
       appBar: AppBar(
+        elevation: 0,
         title: const Text('Detail Pohon'),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit),
+            icon: const Icon(Icons.edit_outlined),
             onPressed: () => Get.toNamed('/form', arguments: tree),
             tooltip: 'Edit',
           ),
           IconButton(
-            icon: const Icon(Icons.delete),
+            icon: const Icon(Icons.delete_outline),
             tooltip: 'Hapus',
             onPressed: () async {
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (_) => AlertDialog(
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
                   title: const Text('Hapus Data?'),
                   content: const Text(
                     'Apakah Anda yakin ingin menghapus data pohon ini? Tindakan ini tidak dapat dibatalkan.',
@@ -39,9 +44,9 @@ class TreeDetailPage extends StatelessWidget {
                       onPressed: () => Navigator.pop(context, false),
                       child: const Text('Batal'),
                     ),
-                    ElevatedButton(
+                    FilledButton(
                       onPressed: () => Navigator.pop(context, true),
-                      style: ElevatedButton.styleFrom(backgroundColor: Colors.red),
+                      style: FilledButton.styleFrom(backgroundColor: Colors.red),
                       child: const Text('Hapus'),
                     ),
                   ],
@@ -55,51 +60,301 @@ class TreeDetailPage extends StatelessWidget {
           )
         ],
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: SingleChildScrollView(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(tree.varietas, style: Theme.of(context).textTheme.headlineSmall),
-              const SizedBox(height: 4),
-              Text('Blok: ${tree.blok} | Nomor: ${tree.nomorPohon}'),
-              const SizedBox(height: 8),
-              Text('Tanggal: ${formatter.format(tree.tanggalPengambilan)}'),
-              Text('Perangkat: ${tree.deviceName}'),
-              Text('Tipe File: ${tree.fileType}'),
-              if (tree.latitude != null && tree.longitude != null) ...[
-                const SizedBox(height: 4),
-                Text('Koordinat: ${tree.latitude}, ${tree.longitude}'),
-              ] else ...[
-                const SizedBox(height: 4),
-                const Text('Koordinat: -'),
-              ],
-              const SizedBox(height: 16),
-              Text('Foto Pohon', style: Theme.of(context).textTheme.titleMedium),
-              const SizedBox(height: 8),
-              GridView.builder(
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                itemCount: tree.photos.length,
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 2,
-                  crossAxisSpacing: 8,
-                  mainAxisSpacing: 8,
+      body: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            // Header Card dengan Varietas
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(24),
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.8)],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
-                itemBuilder: (_, index) {
-                  final photo = tree.photos[index];
-                  return ClipRRect(
-                    borderRadius: BorderRadius.circular(12),
-                    child: Image.file(
-                      File(photo.pathFile),
-                      fit: BoxFit.cover,
-                    ),
-                  );
-                },
               ),
-            ],
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.2),
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: const Icon(Icons.park, color: Colors.white, size: 32),
+                      ),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              tree.varietas,
+                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                                color: Colors.white,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              'Blok ${tree.blok} • No. ${tree.nomorPohon}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+
+            // Info Cards
+            Padding(
+              padding: const EdgeInsets.all(16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  // Tanggal & Waktu
+                  _buildInfoCard(
+                    context,
+                    icon: Icons.calendar_today,
+                    title: 'Tanggal Pengambilan',
+                    value: formatter.format(tree.tanggalPengambilan),
+                    color: Colors.blue,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Lokasi
+                  _buildInfoCard(
+                    context,
+                    icon: Icons.location_on,
+                    title: 'Koordinat Lokasi',
+                    value: tree.latitude != null && tree.longitude != null
+                        ? '${tree.latitude!.toStringAsFixed(6)}, ${tree.longitude!.toStringAsFixed(6)}'
+                        : 'Tidak tersedia',
+                    color: Colors.green,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // Device Info
+                  _buildInfoCard(
+                    context,
+                    icon: Icons.phone_android,
+                    title: 'Perangkat',
+                    value: tree.deviceName,
+                    color: Colors.orange,
+                  ),
+                  const SizedBox(height: 12),
+
+                  // File Type
+                  _buildInfoCard(
+                    context,
+                    icon: Icons.insert_drive_file,
+                    title: 'Tipe File',
+                    value: tree.fileType.toUpperCase(),
+                    color: Colors.purple,
+                  ),
+                  const SizedBox(height: 24),
+
+                  // Foto Pohon Section
+                  Row(
+                    children: [
+                      Icon(Icons.photo_library, color: colorScheme.primary),
+                      const SizedBox(width: 8),
+                      Text(
+                        'Foto Pohon',
+                        style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                      const Spacer(),
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        decoration: BoxDecoration(
+                          color: colorScheme.primaryContainer,
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                        child: Text(
+                          '${tree.photos.length} foto',
+                          style: TextStyle(
+                            color: colorScheme.onPrimaryContainer,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 16),
+
+                  // Photo Grid dengan style baru
+                  GridView.builder(
+                    shrinkWrap: true,
+                    physics: const NeverScrollableScrollPhysics(),
+                    itemCount: tree.photos.length,
+                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+                      crossAxisCount: 2,
+                      crossAxisSpacing: 12,
+                      mainAxisSpacing: 12,
+                      childAspectRatio: 1,
+                    ),
+                    itemBuilder: (_, index) {
+                      final photo = tree.photos[index];
+                      return Hero(
+                        tag: 'photo_${tree.id}_$index',
+                        child: Material(
+                          elevation: 2,
+                          borderRadius: BorderRadius.circular(16),
+                          child: InkWell(
+                            onTap: () => _showPhotoDialog(context, photo.pathFile),
+                            borderRadius: BorderRadius.circular(16),
+                            child: Container(
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(16),
+                                border: Border.all(color: Colors.grey.shade300),
+                              ),
+                              child: ClipRRect(
+                                borderRadius: BorderRadius.circular(16),
+                                child: Stack(
+                                  fit: StackFit.expand,
+                                  children: [
+                                    Image.file(
+                                      File(photo.pathFile),
+                                      fit: BoxFit.cover,
+                                    ),
+                                    Positioned(
+                                      top: 8,
+                                      right: 8,
+                                      child: Container(
+                                        padding: const EdgeInsets.symmetric(
+                                          horizontal: 8,
+                                          vertical: 4,
+                                        ),
+                                        decoration: BoxDecoration(
+                                          color: Colors.black.withOpacity(0.6),
+                                          borderRadius: BorderRadius.circular(12),
+                                        ),
+                                        child: Text(
+                                          'Foto ${photo.urutanFoto}',
+                                          style: const TextStyle(
+                                            color: Colors.white,
+                                            fontSize: 12,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildInfoCard(
+    BuildContext context, {
+    required IconData icon,
+    required String title,
+    required String value,
+    required Color color,
+  }) {
+    return Container(
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.05),
+            blurRadius: 10,
+            offset: const Offset(0, 2),
           ),
+        ],
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(10),
+            decoration: BoxDecoration(
+              color: color.withOpacity(0.1),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Icon(icon, color: color, size: 24),
+          ),
+          const SizedBox(width: 16),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    color: Colors.grey[600],
+                    fontSize: 12,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    fontSize: 15,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _showPhotoDialog(BuildContext context, String photoPath) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.file(
+                File(photoPath),
+                fit: BoxFit.contain,
+              ),
+            ),
+            const SizedBox(height: 16),
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.close, color: Colors.white, size: 32),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.black.withOpacity(0.5),
+              ),
+            ),
+          ],
         ),
       ),
     );
