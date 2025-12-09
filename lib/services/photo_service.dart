@@ -20,6 +20,31 @@ class PhotoService {
     final file = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
     if (file == null) return null;
 
+    return _savePhoto(file, urutan, varietas, blok, nomorPohon);
+  }
+
+  /// Membuka galeri lalu menyimpan foto ke direktori aplikasi dengan nama khusus.
+  Future<String?> pickFromGallery({
+    required int urutan,
+    required String varietas,
+    required String blok,
+    required String nomorPohon,
+  }) async {
+    final picker = ImagePicker();
+    final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    if (file == null) return null;
+
+    return _savePhoto(file, urutan, varietas, blok, nomorPohon);
+  }
+
+  /// Menyimpan foto dari XFile ke direktori aplikasi dengan nama khusus.
+  Future<String?> _savePhoto(
+    XFile file,
+    int urutan,
+    String varietas,
+    String blok,
+    String nomorPohon,
+  ) async {
     // Ekstensi file asli (jpg/png) dipertahankan agar metadata tetap konsisten.
     final ext = extension(file.path);
     final sanitizedVarietas = varietas.replaceAll(' ', '_').toUpperCase();
@@ -34,7 +59,7 @@ class PhotoService {
     }
 
     final savedPath = join(photosDir.path, fileName);
-    // Simpan file dari kamera ke path baru.
+    // Simpan file ke path baru.
     await file.saveTo(savedPath);
     return savedPath;
   }

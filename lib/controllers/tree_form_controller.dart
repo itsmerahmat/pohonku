@@ -35,6 +35,29 @@ class TreeFormController extends GetxController {
     }
   }
 
+  /// Memilih foto dari galeri untuk slot tertentu lalu menyimpannya ke storage lokal.
+  Future<void> pickPhoto({
+    required int index,
+    required String varietas,
+    required String blok,
+    required String nomorPohon,
+  }) async {
+    final savedPath = await _photoService.pickFromGallery(
+      urutan: index + 1,
+      varietas: varietas,
+      blok: blok,
+      nomorPohon: nomorPohon,
+    );
+    if (savedPath != null) {
+      // Jika ada foto lama di slot ini, hapus agar tidak menumpuk di storage.
+      final oldPath = photoPaths[index];
+      photoPaths[index] = savedPath;
+      if (oldPath != null && oldPath != savedPath) {
+        await _photoService.deletePhoto(oldPath);
+      }
+    }
+  }
+
   /// Mengisi foto ketika mode edit sehingga user bisa melihat preview.
   void loadExistingPhotos(List<PhotoModel> photos) {
     for (final photo in photos) {

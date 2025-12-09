@@ -11,14 +11,8 @@ class TreeController extends GetxController {
   final LocationService _locationService = LocationService();
 
   final RxList<TreeModel> trees = <TreeModel>[].obs;
-  final RxBool loading = false.obs;
+  final RxBool loading = true.obs; // Set true sebagai initial state
   final RxString searchKeyword = ''.obs;
-
-  @override
-  void onInit() {
-    super.onInit();
-    loadTrees();
-  }
 
   /// Mengambil semua entri pohon dari database berdasarkan keyword pencarian.
   Future<void> loadTrees() async {

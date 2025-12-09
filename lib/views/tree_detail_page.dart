@@ -55,6 +55,15 @@ class TreeDetailPage extends StatelessWidget {
               if (confirmed == true) {
                 await controller.removeTree(tree);
                 Get.back();
+                Get.snackbar(
+                  'Berhasil!',
+                  'Data pohon berhasil dihapus',
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: Colors.green,
+                  colorText: Colors.white,
+                  icon: const Icon(Icons.check_circle, color: Colors.white),
+                  duration: const Duration(seconds: 2),
+                );
               }
             },
           )
@@ -70,7 +79,7 @@ class TreeDetailPage extends StatelessWidget {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [colorScheme.primary, colorScheme.primary.withOpacity(0.8)],
+                  colors: [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.8)],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -83,7 +92,7 @@ class TreeDetailPage extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: Colors.white.withOpacity(0.2),
+                          color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: const Icon(Icons.park, color: Colors.white, size: 32),
@@ -240,7 +249,7 @@ class TreeDetailPage extends StatelessWidget {
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.black.withOpacity(0.6),
+                                          color: Colors.black.withValues(alpha: 0.6),
                                           borderRadius: BorderRadius.circular(12),
                                         ),
                                         child: Text(
@@ -286,7 +295,7 @@ class TreeDetailPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withOpacity(0.05),
+            color: Colors.black.withValues(alpha: 0.05),
             blurRadius: 10,
             offset: const Offset(0, 2),
           ),
@@ -297,7 +306,7 @@ class TreeDetailPage extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(10),
             decoration: BoxDecoration(
-              color: color.withOpacity(0.1),
+              color: color.withValues(alpha: 0.1),
               borderRadius: BorderRadius.circular(12),
             ),
             child: Icon(icon, color: color, size: 24),
@@ -351,7 +360,7 @@ class TreeDetailPage extends StatelessWidget {
               onPressed: () => Navigator.pop(context),
               icon: const Icon(Icons.close, color: Colors.white, size: 32),
               style: IconButton.styleFrom(
-                backgroundColor: Colors.black.withOpacity(0.5),
+                backgroundColor: Colors.black.withValues(alpha: 0.5),
               ),
             ),
           ],

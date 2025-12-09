@@ -1,15 +1,54 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:treedocs/controllers/tree_controller.dart';
-import 'package:treedocs/models/tree_model.dart';
+// import 'package:treedocs/models/tree_model.dart';
 import 'package:treedocs/views/widgets/tree_card.dart';
 
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
   @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  late final TreeController controller;
+  Timer? _debounce;
+
+  @override
+  void initState() {
+    super.initState();
+    // Init controller tanpa load data
+    controller = Get.put(TreeController(), permanent: true);
+    // Load data SETELAH frame pertama selesai render
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        controller.loadTrees();
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    _debounce?.cancel();
+    super.dispose();
+  }
+
+  void _onSearchChanged(String value) {
+    // Cancel timer sebelumnya jika ada
+    if (_debounce?.isActive ?? false) _debounce!.cancel();
+    
+    // Set timer baru dengan delay 500ms
+    _debounce = Timer(const Duration(milliseconds: 500), () {
+      controller.searchKeyword.value = value;
+      controller.loadTrees();
+    });
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final controller = Get.find<TreeController>();
     final colorScheme = Theme.of(context).colorScheme;
     
     return Scaffold(
@@ -30,7 +69,7 @@ class HomePage extends StatelessWidget {
                     end: Alignment.bottomRight,
                     colors: [
                       colorScheme.primary,
-                      colorScheme.primary.withOpacity(0.8),
+                      colorScheme.primary.withValues(alpha: 0.8),
                     ],
                   ),
                 ),
@@ -46,7 +85,7 @@ class HomePage extends StatelessWidget {
                             Container(
                               padding: const EdgeInsets.all(12),
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.2),
+                                color: Colors.white.withValues(alpha: 0.2),
                                 borderRadius: BorderRadius.circular(12),
                               ),
                               child: const Icon(
@@ -103,7 +142,7 @@ class HomePage extends StatelessWidget {
                   borderRadius: BorderRadius.circular(16),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withOpacity(0.05),
+                      color: Colors.black.withValues(alpha: 0.05),
                       blurRadius: 10,
                       offset: const Offset(0, 2),
                     ),
@@ -117,10 +156,7 @@ class HomePage extends StatelessWidget {
                     filled: false,
                     contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
                   ),
-                  onChanged: (value) {
-                    controller.searchKeyword.value = value;
-                    controller.loadTrees();
-                  },
+                  onChanged: _onSearchChanged,
                 ),
               ),
             ),
@@ -137,7 +173,7 @@ class HomePage extends StatelessWidget {
                     gradient: LinearGradient(
                       colors: [
                         colorScheme.primaryContainer,
-                        colorScheme.primaryContainer.withOpacity(0.7),
+                        colorScheme.primaryContainer.withValues(alpha: 0.7),
                       ],
                     ),
                     borderRadius: BorderRadius.circular(16),
@@ -147,7 +183,7 @@ class HomePage extends StatelessWidget {
                       Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: colorScheme.primary.withOpacity(0.2),
+                          color: colorScheme.primary.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
                         child: Icon(
@@ -171,7 +207,7 @@ class HomePage extends StatelessWidget {
                           Text(
                             'Total Pohon Tersimpan',
                             style: TextStyle(
-                              color: colorScheme.onPrimaryContainer.withOpacity(0.7),
+                              color: colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
                               fontSize: 14,
                             ),
                           ),
@@ -266,3 +302,4 @@ class HomePage extends StatelessWidget {
     );
   }
 }
+

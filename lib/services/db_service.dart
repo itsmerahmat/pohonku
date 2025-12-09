@@ -99,20 +99,34 @@ class DatabaseService {
       'SELECT * FROM trees $whereClause ORDER BY datetime(tanggal_pengambilan) DESC',
       args,
     );
+    
+    if (treeMaps.isEmpty) return [];
+    
+    // Ambil semua tree IDs
+    final treeIds = treeMaps.map((t) => t['id']).toList();
+    
+    // Ambil semua photos dalam 1 query dengan WHERE IN
+    final photoMaps = await db.query(
+      'photos',
+      where: 'tree_id IN (${List.filled(treeIds.length, '?').join(',')})',
+      whereArgs: treeIds,
+      orderBy: 'tree_id ASC, urutan_foto ASC',
+    );
+    
+    // Group photos by tree_id
+    final Map<int, List<PhotoModel>> photosByTreeId = {};
+    for (final photoMap in photoMaps) {
+      final treeId = photoMap['tree_id'] as int;
+      photosByTreeId.putIfAbsent(treeId, () => []);
+      photosByTreeId[treeId]!.add(PhotoModel.fromMap(photoMap));
+    }
+    
+    // Build results dengan photos yang sudah di-group
     final List<TreeModel> results = [];
     for (final map in treeMaps) {
-      final photos = await db.query(
-        'photos',
-        where: 'tree_id = ?',
-        whereArgs: [map['id']],
-        orderBy: 'urutan_foto ASC',
-      );
-      results.add(
-        TreeModel.fromMap(
-          map,
-          photos.map((p) => PhotoModel.fromMap(p)).toList(),
-        ),
-      );
+      final treeId = map['id'] as int;
+      final photos = photosByTreeId[treeId] ?? [];
+      results.add(TreeModel.fromMap(map, photos));
     }
     return results;
   }

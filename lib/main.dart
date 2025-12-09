@@ -1,14 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:treedocs/controllers/tree_controller.dart';
+// import 'package:treedocs/controllers/tree_controller.dart';
 import 'package:treedocs/views/home_page.dart';
 import 'package:treedocs/views/tree_detail_page.dart';
 import 'package:treedocs/views/tree_form_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Inisialisasi TreeController lebih awal agar database siap sebelum UI tampil.
-  Get.put(TreeController());
   runApp(const PohonkuApp());
 }
 
