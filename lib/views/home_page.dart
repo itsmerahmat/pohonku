@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:skeletonizer/skeletonizer.dart';
 import 'package:treedocs/controllers/tree_controller.dart';
 // import 'package:treedocs/models/tree_model.dart';
 import 'package:treedocs/views/widgets/tree_card.dart';
@@ -57,7 +58,7 @@ class _HomePageState extends State<HomePage> {
         slivers: [
           // Modern App Bar dengan Gradient
           SliverAppBar(
-            expandedHeight: 180,
+            expandedHeight: 110,
             floating: false,
             pinned: true,
             backgroundColor: colorScheme.primary,
@@ -75,7 +76,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 child: SafeArea(
                   child: Padding(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.fromLTRB(20, 8, 20, 16),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       mainAxisAlignment: MainAxisAlignment.end,
@@ -116,6 +117,11 @@ class _HomePageState extends State<HomePage> {
                                   ),
                                 ],
                               ),
+                            ),
+                            IconButton(
+                              icon: const Icon(Icons.map, color: Colors.white),
+                              onPressed: () => Get.toNamed('/map'),
+                              tooltip: 'Lihat Peta',
                             ),
                             IconButton(
                               icon: const Icon(Icons.refresh, color: Colors.white),
@@ -225,8 +231,76 @@ class _HomePageState extends State<HomePage> {
           // List Content
           Obx(() {
             if (controller.loading.value) {
-              return const SliverFillRemaining(
-                child: Center(child: CircularProgressIndicator()),
+              // Skeleton loading dengan fake data
+              return SliverPadding(
+                padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
+                sliver: SliverList(
+                  delegate: SliverChildBuilderDelegate(
+                    (_, index) {
+                      return Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Skeletonizer(
+                          child: Container(
+                            height: 120,
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(16),
+                            ),
+                            padding: const EdgeInsets.all(16),
+                            child: Row(
+                              children: [
+                                Container(
+                                  width: 88,
+                                  height: 88,
+                                  decoration: BoxDecoration(
+                                    color: Colors.grey[300],
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                ),
+                                const SizedBox(width: 16),
+                                Expanded(
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisAlignment: MainAxisAlignment.center,
+                                    children: [
+                                      Container(
+                                        height: 20,
+                                        width: double.infinity,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        height: 16,
+                                        width: 150,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                      const SizedBox(height: 8),
+                                      Container(
+                                        height: 14,
+                                        width: 100,
+                                        decoration: BoxDecoration(
+                                          color: Colors.grey[300],
+                                          borderRadius: BorderRadius.circular(4),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                        ),
+                      );
+                    },
+                    childCount: 5,
+                  ),
+                ),
               );
             }
             if (controller.trees.isEmpty) {

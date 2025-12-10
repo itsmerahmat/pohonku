@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 // import 'package:treedocs/controllers/tree_controller.dart';
 import 'package:treedocs/views/home_page.dart';
+import 'package:treedocs/views/map_page.dart';
 import 'package:treedocs/views/tree_detail_page.dart';
 import 'package:treedocs/views/tree_form_page.dart';
 
@@ -72,6 +73,7 @@ class PohonkuApp extends StatelessWidget {
         GetPage(name: '/', page: () => const HomePage()),
         GetPage(name: '/form', page: () => const TreeFormPage()),
         GetPage(name: '/detail', page: () => const TreeDetailPage()),
+        GetPage(name: '/map', page: () => const MapPage()),
       ],
     );
   }

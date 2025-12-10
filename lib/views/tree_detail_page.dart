@@ -6,13 +6,35 @@ import 'package:intl/intl.dart';
 import 'package:treedocs/controllers/tree_controller.dart';
 import 'package:treedocs/models/tree_model.dart';
 
-class TreeDetailPage extends StatelessWidget {
+class TreeDetailPage extends StatefulWidget {
   const TreeDetailPage({super.key});
 
   @override
+  State<TreeDetailPage> createState() => _TreeDetailPageState();
+}
+
+class _TreeDetailPageState extends State<TreeDetailPage> {
+  late TreeModel tree;
+  late TreeController controller;
+
+  @override
+  void initState() {
+    super.initState();
+    tree = Get.arguments as TreeModel;
+    controller = Get.find<TreeController>();
+  }
+
+  Future<void> _navigateToEdit() async {
+    final result = await Get.toNamed('/form', arguments: tree);
+    if (result != null && result is TreeModel) {
+      setState(() {
+        tree = result;
+      });
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
-    final tree = Get.arguments as TreeModel;
-    final controller = Get.find<TreeController>();
     final formatter = DateFormat('dd MMM yyyy HH:mm');
     final colorScheme = Theme.of(context).colorScheme;
     
@@ -24,7 +46,7 @@ class TreeDetailPage extends StatelessWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            onPressed: () => Get.toNamed('/form', arguments: tree),
+            onPressed: _navigateToEdit,
             tooltip: 'Edit',
           ),
           IconButton(

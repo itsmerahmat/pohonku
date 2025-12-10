@@ -65,7 +65,7 @@ class _TreeFormPageState extends State<TreeFormPage> {
             children: [
               // Informasi Pohon Section
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -103,7 +103,7 @@ class _TreeFormPageState extends State<TreeFormPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 16),
                     TextFormField(
                       controller: _varietasController,
                       decoration: const InputDecoration(
@@ -144,11 +144,11 @@ class _TreeFormPageState extends State<TreeFormPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 16),
               
               // Foto Section
               Container(
-                padding: const EdgeInsets.all(20),
+                padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(16),
@@ -200,7 +200,7 @@ class _TreeFormPageState extends State<TreeFormPage> {
                         ),
                       ],
                     ),
-                    const SizedBox(height: 16),
+                    const SizedBox(height: 12),
                     Obx(() {
                       final photosList = formController.photoPaths.toList();
                       return GridView.builder(
@@ -208,8 +208,8 @@ class _TreeFormPageState extends State<TreeFormPage> {
                         physics: const NeverScrollableScrollPhysics(),
                         gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                           crossAxisCount: 2,
-                          mainAxisSpacing: 12,
-                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 10,
+                          crossAxisSpacing: 10,
                           childAspectRatio: 1,
                         ),
                         itemCount: 4,
@@ -336,7 +336,7 @@ class _TreeFormPageState extends State<TreeFormPage> {
                   ],
                 ),
               ),
-              const SizedBox(height: 24),
+              const SizedBox(height: 20),
               
               // Save Button
               Obx(() {
@@ -364,7 +364,7 @@ class _TreeFormPageState extends State<TreeFormPage> {
                             await _handleSave();
                           },
                     style: FilledButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      padding: const EdgeInsets.symmetric(vertical: 14),
                       backgroundColor: allFilled ? null : Colors.grey,
                     ),
                     icon: Icon(isSaving ? Icons.hourglass_empty : Icons.save),
@@ -375,7 +375,7 @@ class _TreeFormPageState extends State<TreeFormPage> {
                   ),
                 );
               }),
-              const SizedBox(height: 16),
+              const SizedBox(height: 12),
             ],
           ),
         ),
@@ -503,7 +503,9 @@ class _TreeFormPageState extends State<TreeFormPage> {
       );
     } else {
       await treeController.updateTree(tree);
-      Get.back();
+      // Get updated tree data
+      final updatedTree = await treeController.getTreeById(tree.id!);
+      Get.back(result: updatedTree);
       Get.snackbar(
         'Berhasil!',
         'Data pohon berhasil diperbarui',

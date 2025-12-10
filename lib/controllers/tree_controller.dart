@@ -35,6 +35,11 @@ class TreeController extends GetxController {
     await loadTrees();
   }
 
+  /// Mengambil data pohon berdasarkan ID.
+  Future<TreeModel?> getTreeById(int id) async {
+    return await _dbService.getTreeById(id);
+  }
+
   /// Menghapus data pohon dan semua file foto terkait.
   Future<void> removeTree(TreeModel tree) async {
     for (final photo in tree.photos) {
