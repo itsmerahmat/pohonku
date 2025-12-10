@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
+import 'package:treedocs/controllers/group_controller.dart';
 import 'package:treedocs/controllers/tree_controller.dart';
-// import 'package:treedocs/models/tree_model.dart';
-import 'package:treedocs/views/widgets/tree_card.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -15,18 +15,22 @@ class HomePage extends StatefulWidget {
 }
 
 class _HomePageState extends State<HomePage> {
-  late final TreeController controller;
+  late final GroupController controller;
   Timer? _debounce;
 
   @override
   void initState() {
     super.initState();
-    // Init controller tanpa load data
-    controller = Get.put(TreeController(), permanent: true);
+    // Init TreeController untuk keperluan lain
+    Get.put(TreeController(), permanent: true);
+    
+    // Init GroupController untuk home page
+    controller = Get.put(GroupController(), permanent: true);
+    
     // Load data SETELAH frame pertama selesai render
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
-        controller.loadTrees();
+        controller.loadGroups();
       }
     });
   }
@@ -44,7 +48,7 @@ class _HomePageState extends State<HomePage> {
     // Set timer baru dengan delay 500ms
     _debounce = Timer(const Duration(milliseconds: 500), () {
       controller.searchKeyword.value = value;
-      controller.loadTrees();
+      controller.loadGroups();
     });
   }
 
@@ -59,8 +63,9 @@ class _HomePageState extends State<HomePage> {
           // Modern App Bar dengan Gradient
           SliverAppBar(
             expandedHeight: 110,
-            floating: false,
-            pinned: true,
+            // floating: false,
+            // pinned: true,
+            // snap: false,
             backgroundColor: colorScheme.primary,
             flexibleSpace: FlexibleSpaceBar(
               background: Container(
@@ -118,14 +123,14 @@ class _HomePageState extends State<HomePage> {
                                 ],
                               ),
                             ),
-                            IconButton(
-                              icon: const Icon(Icons.map, color: Colors.white),
-                              onPressed: () => Get.toNamed('/map'),
-                              tooltip: 'Lihat Peta',
-                            ),
+                            // IconButton(
+                            //   icon: const Icon(Icons.map, color: Colors.white),
+                            //   onPressed: () => Get.toNamed('/map'),
+                            //   tooltip: 'Lihat Peta',
+                            // ),
                             IconButton(
                               icon: const Icon(Icons.refresh, color: Colors.white),
-                              onPressed: controller.loadTrees,
+                              onPressed: controller.loadGroups,
                               tooltip: 'Segarkan',
                             ),
                           ],
@@ -156,7 +161,7 @@ class _HomePageState extends State<HomePage> {
                 ),
                 child: TextField(
                   decoration: const InputDecoration(
-                    hintText: 'Cari varietas, blok, atau nomor pohon...',
+                    hintText: 'Cari varietas atau blok...',
                     prefixIcon: Icon(Icons.search),
                     border: InputBorder.none,
                     filled: false,
@@ -171,67 +176,106 @@ class _HomePageState extends State<HomePage> {
           // Stats Card
           SliverToBoxAdapter(
             child: Obx(() {
+              final totalGroups = controller.groups.length;
+              final totalTrees = controller.groups.fold<int>(
+                0,
+                (sum, group) => sum + (group['count'] as int),
+              );
+
               return Padding(
                 padding: const EdgeInsets.symmetric(horizontal: 16),
-                child: Container(
-                  padding: const EdgeInsets.all(20),
-                  decoration: BoxDecoration(
-                    gradient: LinearGradient(
-                      colors: [
-                        colorScheme.primaryContainer,
-                        colorScheme.primaryContainer.withValues(alpha: 0.7),
-                      ],
-                    ),
-                    borderRadius: BorderRadius.circular(16),
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
                         padding: const EdgeInsets.all(12),
                         decoration: BoxDecoration(
-                          color: colorScheme.primary.withValues(alpha: 0.2),
+                          gradient: LinearGradient(
+                            colors: [
+                              colorScheme.primaryContainer,
+                              colorScheme.primaryContainer.withValues(alpha: 0.7),
+                            ],
+                          ),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: Icon(
-                          Icons.forest,
-                          color: colorScheme.primary,
-                          size: 32,
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.forest,
+                              color: colorScheme.primary,
+                              size: 24,
+                            ),
+                            const SizedBox(height: 6),
+                            Text(
+                              '$totalTrees',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onPrimaryContainer,
+                              ),
+                            ),
+                            Text(
+                              'Pohon',
+                              style: TextStyle(
+                                color: colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
                         ),
                       ),
-                      const SizedBox(width: 16),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            '${controller.trees.length}',
-                            style: TextStyle(
-                              fontSize: 32,
-                              fontWeight: FontWeight.bold,
-                              color: colorScheme.onPrimaryContainer,
-                            ),
+                    ),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            colors: [
+                              colorScheme.secondaryContainer,
+                              colorScheme.secondaryContainer.withValues(alpha: 0.7),
+                            ],
                           ),
-                          Text(
-                            'Total Pohon Tersimpan',
-                            style: TextStyle(
-                              color: colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
-                              fontSize: 14,
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                        child: Column(
+                          children: [
+                            Icon(
+                              Icons.category,
+                              color: colorScheme.secondary,
+                              size: 24,
                             ),
-                          ),
-                        ],
+                            const SizedBox(height: 6),
+                            Text(
+                              '$totalGroups',
+                              style: TextStyle(
+                                fontSize: 22,
+                                fontWeight: FontWeight.bold,
+                                color: colorScheme.onSecondaryContainer,
+                              ),
+                            ),
+                            Text(
+                              'Grup',
+                              style: TextStyle(
+                                color: colorScheme.onSecondaryContainer.withValues(alpha: 0.7),
+                                fontSize: 11,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               );
             }),
           ),
           
-          const SliverToBoxAdapter(child: SizedBox(height: 16)),
+          const SliverToBoxAdapter(child: SizedBox(height: 12)),
           
-          // List Content
+          // List Content - Group by Varietas & Blok
           Obx(() {
             if (controller.loading.value) {
-              // Skeleton loading dengan fake data
               return SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                 sliver: SliverList(
@@ -241,58 +285,10 @@ class _HomePageState extends State<HomePage> {
                         padding: const EdgeInsets.only(bottom: 12),
                         child: Skeletonizer(
                           child: Container(
-                            height: 120,
+                            height: 100,
                             decoration: BoxDecoration(
                               color: Colors.white,
                               borderRadius: BorderRadius.circular(16),
-                            ),
-                            padding: const EdgeInsets.all(16),
-                            child: Row(
-                              children: [
-                                Container(
-                                  width: 88,
-                                  height: 88,
-                                  decoration: BoxDecoration(
-                                    color: Colors.grey[300],
-                                    borderRadius: BorderRadius.circular(12),
-                                  ),
-                                ),
-                                const SizedBox(width: 16),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Container(
-                                        height: 20,
-                                        width: double.infinity,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[300],
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Container(
-                                        height: 16,
-                                        width: 150,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[300],
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Container(
-                                        height: 14,
-                                        width: 100,
-                                        decoration: BoxDecoration(
-                                          color: Colors.grey[300],
-                                          borderRadius: BorderRadius.circular(4),
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
                             ),
                           ),
                         ),
@@ -303,7 +299,8 @@ class _HomePageState extends State<HomePage> {
                 ),
               );
             }
-            if (controller.trees.isEmpty) {
+
+            if (controller.groups.isEmpty) {
               return SliverFillRemaining(
                 child: Center(
                   child: Column(
@@ -338,30 +335,42 @@ class _HomePageState extends State<HomePage> {
                       ),
                       const SizedBox(height: 24),
                       ElevatedButton.icon(
-                        onPressed: () => Get.toNamed('/form'),
+                        onPressed: () => Get.toNamed('/session'),
                         icon: const Icon(Icons.add),
-                        label: const Text('Tambah Pohon'),
+                        label: const Text('Mulai Sesi Baru'),
                       ),
                     ],
                   ),
                 ),
               );
             }
+
             return SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
               sliver: SliverList(
                 delegate: SliverChildBuilderDelegate(
                   (_, index) {
-                    final tree = controller.trees[index];
+                    final group = controller.groups[index];
+                    final varietas = group['varietas'] as String;
+                    final blok = group['blok'] as String;
+                    final count = group['count'] as int;
+                    final lastUpdated = group['last_updated'] as String;
+
                     return Padding(
                       padding: const EdgeInsets.only(bottom: 12),
-                      child: TreeCard(
-                        tree: tree,
-                        onTap: () => Get.toNamed('/detail', arguments: tree),
+                      child: _GroupCard(
+                        varietas: varietas,
+                        blok: blok,
+                        count: count,
+                        lastUpdated: lastUpdated,
+                        onTap: () => Get.toNamed('/trees', arguments: {
+                          'varietas': varietas,
+                          'blok': blok,
+                        }),
                       ),
                     );
                   },
-                  childCount: controller.trees.length,
+                  childCount: controller.groups.length,
                 ),
               ),
             );
@@ -369,11 +378,142 @@ class _HomePageState extends State<HomePage> {
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Get.toNamed('/form'),
+        onPressed: () => Get.toNamed('/session'),
         icon: const Icon(Icons.add),
-        label: const Text('Tambah Pohon'),
+        label: const Text('Sesi Baru'),
       ),
     );
   }
 }
 
+class _GroupCard extends StatelessWidget {
+  final String varietas;
+  final String blok;
+  final int count;
+  final String lastUpdated;
+  final VoidCallback onTap;
+
+  const _GroupCard({
+    required this.varietas,
+    required this.blok,
+    required this.count,
+    required this.lastUpdated,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final colorScheme = Theme.of(context).colorScheme;
+    final dateTime = DateTime.parse(lastUpdated);
+    final formattedDate = DateFormat('dd MMM yyyy, HH:mm').format(dateTime);
+
+    return Material(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(16),
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(16),
+        child: Container(
+          padding: const EdgeInsets.all(16),
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: Colors.grey.withValues(alpha: 0.2),
+              width: 1,
+            ),
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 60,
+                height: 60,
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      colorScheme.primary,
+                      colorScheme.primary.withValues(alpha: 0.7),
+                    ],
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: const Icon(
+                  Icons.folder,
+                  color: Colors.white,
+                  size: 28,
+                ),
+              ),
+              const SizedBox(width: 16),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      varietas,
+                      style: const TextStyle(
+                        fontSize: 18,
+                        fontWeight: FontWeight.bold,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.grid_view,
+                          size: 14,
+                          color: Colors.grey[600],
+                        ),
+                        const SizedBox(width: 4),
+                        Text(
+                          'Blok $blok',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey[700],
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 8,
+                            vertical: 2,
+                          ),
+                          decoration: BoxDecoration(
+                            color: colorScheme.primaryContainer,
+                            borderRadius: BorderRadius.circular(12),
+                          ),
+                          child: Text(
+                            '$count pohon',
+                            style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onPrimaryContainer,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 4),
+                    Text(
+                      formattedDate,
+                      style: TextStyle(
+                        fontSize: 12,
+                        color: Colors.grey[500],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Icon(
+                Icons.chevron_right,
+                color: Colors.grey[400],
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+}

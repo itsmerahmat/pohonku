@@ -142,4 +142,65 @@ class DatabaseService {
       photoMaps.map((p) => PhotoModel.fromMap(p)).toList(),
     );
   }
+
+  /// Mengambil group varietas & blok dengan jumlah pohon
+  Future<List<Map<String, dynamic>>> getVarietasBlokGroups({String? query}) async {
+    final db = await database;
+    final whereClause = (query != null && query.isNotEmpty)
+        ? 'WHERE varietas LIKE ? OR blok LIKE ?'
+        : '';
+    final args = (query != null && query.isNotEmpty)
+        ? ['%$query%', '%$query%']
+        : null;
+    
+    final result = await db.rawQuery('''
+      SELECT 
+        varietas,
+        blok,
+        COUNT(*) as count,
+        MAX(datetime(tanggal_pengambilan)) as last_updated
+      FROM trees
+      $whereClause
+      GROUP BY varietas, blok
+      ORDER BY datetime(last_updated) DESC
+    ''', args);
+    
+    return result;
+  }
+
+  /// Mengambil pohon berdasarkan varietas dan blok
+  Future<List<TreeModel>> getTreesByVarietasBlok(String varietas, String blok) async {
+    final db = await database;
+    final treeMaps = await db.query(
+      'trees',
+      where: 'varietas = ? AND blok = ?',
+      whereArgs: [varietas, blok],
+      orderBy: 'datetime(tanggal_pengambilan) DESC',
+    );
+    
+    if (treeMaps.isEmpty) return [];
+    
+    final treeIds = treeMaps.map((t) => t['id']).toList();
+    final photoMaps = await db.query(
+      'photos',
+      where: 'tree_id IN (${List.filled(treeIds.length, '?').join(',')})',
+      whereArgs: treeIds,
+      orderBy: 'tree_id ASC, urutan_foto ASC',
+    );
+    
+    final Map<int, List<PhotoModel>> photosByTreeId = {};
+    for (final photoMap in photoMaps) {
+      final treeId = photoMap['tree_id'] as int;
+      photosByTreeId.putIfAbsent(treeId, () => []);
+      photosByTreeId[treeId]!.add(PhotoModel.fromMap(photoMap));
+    }
+    
+    final List<TreeModel> results = [];
+    for (final map in treeMaps) {
+      final treeId = map['id'] as int;
+      final photos = photosByTreeId[treeId] ?? [];
+      results.add(TreeModel.fromMap(map, photos));
+    }
+    return results;
+  }
 }

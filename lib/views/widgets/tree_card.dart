@@ -11,7 +11,7 @@ class TreeCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final formatter = DateFormat('dd MMM yyyy');
+    final formatter = DateFormat('dd MMM yyyy, HH:mm');
     final colorScheme = Theme.of(context).colorScheme;
     
     return Container(

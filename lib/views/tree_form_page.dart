@@ -366,6 +366,9 @@ class _TreeFormPageState extends State<TreeFormPage> {
                     style: FilledButton.styleFrom(
                       padding: const EdgeInsets.symmetric(vertical: 14),
                       backgroundColor: allFilled ? null : Colors.grey,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
                     ),
                     icon: Icon(isSaving ? Icons.hourglass_empty : Icons.save),
                     label: Text(

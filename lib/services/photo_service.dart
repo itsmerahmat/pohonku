@@ -64,6 +64,17 @@ class PhotoService {
     return savedPath;
   }
 
+  /// Menyimpan foto dari XFile yang sudah ada (untuk continuous capture)
+  Future<String?> captureAndSaveFromFile({
+    required XFile file,
+    required int urutan,
+    required String varietas,
+    required String blok,
+    required String nomorPohon,
+  }) async {
+    return _savePhoto(file, urutan, varietas, blok, nomorPohon);
+  }
+
   /// Menghapus file foto dari storage jika ada.
   Future<void> deletePhoto(String path) async {
     final file = File(path);

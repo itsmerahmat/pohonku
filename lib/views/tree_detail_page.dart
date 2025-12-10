@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import 'package:path/path.dart' as path;
 import 'package:treedocs/controllers/tree_controller.dart';
 import 'package:treedocs/models/tree_model.dart';
 
@@ -262,6 +263,42 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
                                       File(photo.pathFile),
                                       fit: BoxFit.cover,
                                     ),
+                                    // Gradient overlay at bottom
+                                    Positioned(
+                                      left: 0,
+                                      right: 0,
+                                      bottom: 0,
+                                      child: Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          gradient: LinearGradient(
+                                            begin: Alignment.topCenter,
+                                            end: Alignment.bottomCenter,
+                                            colors: [
+                                              Colors.transparent,
+                                              Colors.black.withValues(alpha: 0.7),
+                                            ],
+                                          ),
+                                        ),
+                                        child: Column(
+                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          mainAxisSize: MainAxisSize.min,
+                                          children: [
+                                            Text(
+                                              path.basename(photo.pathFile),
+                                              style: const TextStyle(
+                                                color: Colors.white,
+                                                fontSize: 10,
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                              maxLines: 1,
+                                              overflow: TextOverflow.ellipsis,
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                                    ),
+                                    // Badge foto number
                                     Positioned(
                                       top: 8,
                                       right: 8,
@@ -280,6 +317,30 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
                                             color: Colors.white,
                                             fontSize: 12,
                                             fontWeight: FontWeight.bold,
+                                          ),
+                                        ),
+                                      ),
+                                    ),
+                                    // Download button
+                                    Positioned(
+                                      top: 8,
+                                      left: 8,
+                                      child: Material(
+                                        color: Colors.transparent,
+                                        child: InkWell(
+                                          onTap: () => _downloadPhoto(photo.pathFile),
+                                          borderRadius: BorderRadius.circular(20),
+                                          child: Container(
+                                            padding: const EdgeInsets.all(6),
+                                            decoration: BoxDecoration(
+                                              color: Colors.black.withValues(alpha: 0.6),
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.download,
+                                              color: Colors.white,
+                                              size: 18,
+                                            ),
                                           ),
                                         ),
                                       ),
@@ -378,16 +439,61 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
               ),
             ),
             const SizedBox(height: 16),
-            IconButton(
-              onPressed: () => Navigator.pop(context),
-              icon: const Icon(Icons.close, color: Colors.white, size: 32),
-              style: IconButton.styleFrom(
-                backgroundColor: Colors.black.withValues(alpha: 0.5),
-              ),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                IconButton(
+                  onPressed: () => _downloadPhoto(photoPath),
+                  icon: const Icon(Icons.download, color: Colors.white, size: 28),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black.withValues(alpha: 0.5),
+                  ),
+                  tooltip: 'Download',
+                ),
+                const SizedBox(width: 12),
+                IconButton(
+                  onPressed: () => Navigator.pop(context),
+                  icon: const Icon(Icons.close, color: Colors.white, size: 32),
+                  style: IconButton.styleFrom(
+                    backgroundColor: Colors.black.withValues(alpha: 0.5),
+                  ),
+                  tooltip: 'Tutup',
+                ),
+              ],
             ),
           ],
         ),
       ),
     );
+  }
+
+  Future<void> _downloadPhoto(String photoPath) async {
+    try {
+      // Copy file ke folder Downloads
+      final fileName = path.basename(photoPath);
+      final downloadPath = '/storage/emulated/0/Download/$fileName';
+      
+      await File(photoPath).copy(downloadPath);
+      
+      Get.snackbar(
+        'Berhasil!',
+        'Foto berhasil disimpan ke folder Download',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        icon: const Icon(Icons.check_circle, color: Colors.white),
+        duration: const Duration(seconds: 2),
+      );
+    } catch (e) {
+      Get.snackbar(
+        'Error',
+        'Gagal menyimpan foto: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        icon: const Icon(Icons.error, color: Colors.white),
+        duration: const Duration(seconds: 3),
+      );
+    }
   }
 }
