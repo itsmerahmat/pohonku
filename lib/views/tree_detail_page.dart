@@ -7,6 +7,7 @@ import 'package:path/path.dart' as path;
 import 'package:treedocs/controllers/group_controller.dart';
 import 'package:treedocs/controllers/tree_controller.dart';
 import 'package:treedocs/models/tree_model.dart';
+import 'package:treedocs/utils/snackbar_helper.dart';
 
 class TreeDetailPage extends StatefulWidget {
   const TreeDetailPage({super.key});
@@ -72,15 +73,7 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
                 // Return true to trigger tree list refresh
                 Get.back(result: true);
                 
-                Get.snackbar(
-                  'Berhasil!',
-                  'Data pohon berhasil dihapus',
-                  snackPosition: SnackPosition.BOTTOM,
-                  backgroundColor: Colors.green,
-                  colorText: Colors.white,
-                  icon: const Icon(Icons.check_circle, color: Colors.white),
-                  duration: const Duration(seconds: 2),
-                );
+                SnackbarHelper.showSuccess('Data pohon berhasil dihapus');
               }
             },
           )
@@ -469,25 +462,9 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
       
       await File(photoPath).copy(downloadPath);
       
-      Get.snackbar(
-        'Berhasil!',
-        'Foto berhasil disimpan ke folder Download',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        icon: const Icon(Icons.check_circle, color: Colors.white),
-        duration: const Duration(seconds: 2),
-      );
+      SnackbarHelper.showSuccess('Foto berhasil disimpan ke folder Download');
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Gagal menyimpan foto: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-        icon: const Icon(Icons.error, color: Colors.white),
-        duration: const Duration(seconds: 3),
-      );
+      SnackbarHelper.showError('Gagal menyimpan foto: ${e.toString()}');
     }
   }
 }

@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:geolocator/geolocator.dart';
-// import 'package:permission_handler/permission_handler.dart';
+import 'package:treedocs/utils/snackbar_helper.dart';
 
 class SessionFormPage extends StatefulWidget {
   const SessionFormPage({super.key});
@@ -294,13 +294,9 @@ class _SessionFormPageState extends State<SessionFormPage> {
   }
 
   void _showGpsWarning() {
-    Get.snackbar(
-      'GPS Tidak Aktif',
+    SnackbarHelper.showWarning(
       'Aktifkan GPS untuk menyimpan koordinat lokasi pohon',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.orange,
-      colorText: Colors.white,
-      icon: const Icon(Icons.warning, color: Colors.white),
+      title: 'GPS Tidak Aktif',
       duration: const Duration(seconds: 4),
     );
   }

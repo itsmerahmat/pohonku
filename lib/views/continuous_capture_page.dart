@@ -5,8 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:treedocs/controllers/capture_controller.dart';
-
-import '../controllers/group_controller.dart';
+import 'package:treedocs/controllers/group_controller.dart';
+import 'package:treedocs/utils/snackbar_helper.dart';
 
 class ContinuousCapturePage extends StatefulWidget {
   const ContinuousCapturePage({super.key});
@@ -604,13 +604,9 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
       // GroupController tidak ditemukan
     }
     
-    Get.snackbar(
-      'Sesi Selesai!',
+    SnackbarHelper.showSuccess(
       '$count pohon berhasil disimpan',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-      icon: const Icon(Icons.check_circle, color: Colors.white),
+      title: 'Sesi Selesai!',
       duration: const Duration(seconds: 3),
     );
   }
