@@ -6,6 +6,7 @@ import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:treedocs/controllers/group_controller.dart';
 import 'package:treedocs/controllers/tree_controller.dart';
+import 'package:treedocs/views/widgets/empty_state.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -303,43 +304,15 @@ class _HomePageState extends State<HomePage> {
             if (controller.groups.isEmpty) {
               return SliverFillRemaining(
                 child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          shape: BoxShape.circle,
-                        ),
-                        child: Icon(
-                          Icons.park_outlined,
-                          size: 64,
-                          color: Colors.grey[400],
-                        ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Belum Ada Data Pohon',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
-                        ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Mulai dokumentasi pohon dengan\nmenambahkan data pohon pertama',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton.icon(
-                        onPressed: () => Get.toNamed('/session'),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Mulai Sesi Baru'),
-                      ),
-                    ],
+                  child: EmptyState(
+                    icon: Icons.park_outlined,
+                    title: 'Belum Ada Data Pohon',
+                    description: 'Mulai dokumentasi pohon dengan\nmenambahkan data pohon pertama',
+                    action: ElevatedButton.icon(
+                      onPressed: () => Get.toNamed('/session'),
+                      icon: const Icon(Icons.add),
+                      label: const Text('Mulai Sesi Baru'),
+                    ),
                   ),
                 ),
               );

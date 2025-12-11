@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:treedocs/models/tree_model.dart';
 import 'package:treedocs/services/db_service.dart';
+import 'package:treedocs/views/widgets/empty_state.dart';
 import 'package:treedocs/views/widgets/tree_card.dart';
 
 class TreeListPage extends StatefulWidget {
@@ -88,37 +89,10 @@ class _TreeListPageState extends State<TreeListPage> {
 
         if (trees.isEmpty) {
           return Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.grey[100],
-                    shape: BoxShape.circle,
-                  ),
-                  child: Icon(
-                    Icons.park_outlined,
-                    size: 64,
-                    color: Colors.grey[400],
-                  ),
-                ),
-                const SizedBox(height: 16),
-                Text(
-                  'Belum Ada Pohon',
-                  style: TextStyle(
-                    fontSize: 18,
-                    fontWeight: FontWeight.bold,
-                    color: Colors.grey[700],
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  'Tidak ada data pohon untuk\n$varietas - Blok $blok',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(color: Colors.grey[600]),
-                ),
-              ],
+            child: EmptyState(
+              icon: Icons.park_outlined,
+              title: 'Belum Ada Pohon',
+              description: 'Tidak ada data pohon untuk\n$varietas - Blok $blok',
             ),
           );
         }
