@@ -49,13 +49,7 @@ class CaptureController extends GetxController {
     try {
       final cameras = await availableCameras();
       if (cameras.isEmpty) {
-        Get.snackbar(
-          'Error',
-          'Tidak ada kamera tersedia',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+        _showSnackBar('Error', 'Tidak ada kamera tersedia', Colors.red);
         return;
       }
 
@@ -70,119 +64,35 @@ class CaptureController extends GetxController {
       await cameraController!.initialize();
       isCameraInitialized.value = true;
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Gagal menginisialisasi kamera: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      _showSnackBar('Error', 'Gagal menginisialisasi kamera: ${e.toString()}', Colors.red);
     }
   }
 
   /// Mulai capture 4 foto berurutan dengan camera package
   Future<void> startContinuousCapture() async {
-    if (currentTreeId.value.isEmpty) {
-      Get.snackbar(
-        'Peringatan',
-        'Masukkan ID Pohon terlebih dahulu',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-      );
-      return;
-    }
-
-    // Cek dan request permission lokasi
-    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
-    if (!serviceEnabled) {
-      Get.snackbar(
-        'GPS Tidak Aktif',
-        'Aktifkan GPS untuk menyimpan koordinat lokasi pohon',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 4),
-        mainButton: TextButton(
-          onPressed: () async {
-            await Geolocator.openLocationSettings();
-            Get.back();
-          },
-          child: const Text('Aktifkan', style: TextStyle(color: Colors.white)),
-        ),
-      );
-      // Lanjutkan tanpa GPS
-    }
-
-    LocationPermission permission = await Geolocator.checkPermission();
-    if (permission == LocationPermission.denied) {
-      permission = await Geolocator.requestPermission();
-      if (permission == LocationPermission.denied) {
-        Get.snackbar(
-          'Izin Lokasi Ditolak',
-          'Foto akan disimpan tanpa koordinat GPS',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.orange,
-          colorText: Colors.white,
-        );
-        // Lanjutkan tanpa GPS
-      }
-    }
-
-    if (permission == LocationPermission.deniedForever) {
-      Get.snackbar(
-        'Izin Lokasi Ditolak Permanen',
-        'Aktifkan izin lokasi di pengaturan untuk menyimpan GPS',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.orange,
-        colorText: Colors.white,
-        duration: const Duration(seconds: 4),
-        mainButton: TextButton(
-          onPressed: () async {
-            await Geolocator.openAppSettings();
-            Get.back();
-          },
-          child: const Text('Pengaturan', style: TextStyle(color: Colors.white)),
-        ),
-      );
-      // Lanjutkan tanpa GPS
-    }
-    
-    // Initialize camera jika belum
-    if (cameraController == null || !cameraController!.value.isInitialized) {
-      await initializeCamera();
-    }
-
-    if (!isCameraInitialized.value) {
-      Get.snackbar(
-        'Error',
-        'Kamera tidak dapat diinisialisasi',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
-      return;
-    }
+    if (!_validateTreeId()) return;
+    await _ensureLocationPermission();
+    final cameraReady = await _ensureCameraInitialized();
+    if (!cameraReady) return;
 
     // Set ready mode - siap untuk capture manual
     isReady.value = true;
     currentPhotoIndex.value = 0;
-    
-    Get.snackbar(
+
+    _showSnackBar(
       'Siap Capture!',
       'Tekan tombol shutter atau remote bluetooth untuk mengambil foto',
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.blue,
-      colorText: Colors.white,
+      Colors.blue,
+      position: SnackPosition.TOP,
       duration: const Duration(seconds: 3),
     );
   }
 
   /// Capture single photo (dipanggil saat tombol volume/remote ditekan)
   Future<void> capturePhoto() async {
-    if (!isReady.value) return;
-    if (currentPhotoIndex.value >= 4) return;
-    if (isCapturing.value) return;
+    if (!isReady.value || currentPhotoIndex.value >= 4 || isCapturing.value) {
+      return;
+    }
 
     isCapturing.value = true;
 
@@ -190,17 +100,7 @@ class CaptureController extends GetxController {
       final index = currentPhotoIndex.value;
 
       // Ambil GPS dari Geolocator untuk setiap foto
-      try {
-        final position = await Geolocator.getCurrentPosition(
-          desiredAccuracy: LocationAccuracy.high,
-          timeLimit: const Duration(seconds: 5),
-        );
-        currentLatitude = position.latitude;
-        currentLongitude = position.longitude;
-      } catch (e) {
-        currentLatitude = null;
-        currentLongitude = null;
-      }
+      await _refreshCurrentLocation();
 
       // Capture foto
       final image = await cameraController!.takePicture();
@@ -216,13 +116,7 @@ class CaptureController extends GetxController {
 
       if (savedPath != null) {
         // Tulis GPS ke EXIF jika tersedia
-        if (currentLatitude != null && currentLongitude != null) {
-          await _exifService.writeGpsToPhoto(
-            savedPath,
-            currentLatitude!,
-            currentLongitude!,
-          );
-        }
+        await _writeGpsToPhoto(savedPath);
 
         currentPhotos[index] = savedPath;
         currentPhotoIndex.value++;
@@ -233,22 +127,10 @@ class CaptureController extends GetxController {
           isReady.value = false;
         }
       } else {
-        Get.snackbar(
-          'Error',
-          'Gagal menyimpan foto ${index + 1}',
-          snackPosition: SnackPosition.BOTTOM,
-          backgroundColor: Colors.red,
-          colorText: Colors.white,
-        );
+        _showSnackBar('Error', 'Gagal menyimpan foto ${index + 1}', Colors.red);
       }
     } catch (e) {
-      Get.snackbar(
-        'Error',
-        'Gagal mengambil foto: ${e.toString()}',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.red,
-        colorText: Colors.white,
-      );
+      _showSnackBar('Error', 'Gagal mengambil foto: ${e.toString()}', Colors.red);
     } finally {
       isCapturing.value = false;
     }
@@ -320,5 +202,116 @@ class CaptureController extends GetxController {
   void cancelCapture() {
     isReady.value = false;
     isCapturing.value = false;
+  }
+
+  Future<void> _refreshCurrentLocation() async {
+    try {
+      final position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+        timeLimit: const Duration(seconds: 5),
+      );
+      currentLatitude = position.latitude;
+      currentLongitude = position.longitude;
+    } catch (_) {
+      currentLatitude = null;
+      currentLongitude = null;
+    }
+  }
+
+  Future<void> _writeGpsToPhoto(String savedPath) async {
+    if (currentLatitude != null && currentLongitude != null) {
+      await _exifService.writeGpsToPhoto(
+        savedPath,
+        currentLatitude!,
+        currentLongitude!,
+      );
+    }
+  }
+
+  bool _validateTreeId() {
+    if (currentTreeId.value.isEmpty) {
+      _showSnackBar('Peringatan', 'Masukkan ID Pohon terlebih dahulu', Colors.orange);
+      return false;
+    }
+    return true;
+  }
+
+  Future<void> _ensureLocationPermission() async {
+    final serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      _showSnackBar(
+        'GPS Tidak Aktif',
+        'Aktifkan GPS untuk menyimpan koordinat lokasi pohon',
+        Colors.orange,
+        duration: const Duration(seconds: 4),
+        action: TextButton(
+          onPressed: () async {
+            await Geolocator.openLocationSettings();
+            Get.back();
+          },
+          child: const Text('Aktifkan', style: TextStyle(color: Colors.white)),
+        ),
+      );
+    }
+
+    var permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        _showSnackBar(
+          'Izin Lokasi Ditolak',
+          'Foto akan disimpan tanpa koordinat GPS',
+          Colors.orange,
+        );
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      _showSnackBar(
+        'Izin Lokasi Ditolak Permanen',
+        'Aktifkan izin lokasi di pengaturan untuk menyimpan GPS',
+        Colors.orange,
+        duration: const Duration(seconds: 4),
+        action: TextButton(
+          onPressed: () async {
+            await Geolocator.openAppSettings();
+            Get.back();
+          },
+          child: const Text('Pengaturan', style: TextStyle(color: Colors.white)),
+        ),
+      );
+    }
+  }
+
+  Future<bool> _ensureCameraInitialized() async {
+    if (cameraController == null || !cameraController!.value.isInitialized) {
+      await initializeCamera();
+    }
+
+    if (!isCameraInitialized.value) {
+      _showSnackBar('Error', 'Kamera tidak dapat diinisialisasi', Colors.red);
+      return false;
+    }
+
+    return true;
+  }
+
+  void _showSnackBar(
+    String title,
+    String message,
+    Color backgroundColor, {
+    SnackPosition position = SnackPosition.BOTTOM,
+    Duration? duration,
+    Widget? action,
+  }) {
+    Get.snackbar(
+      title,
+      message,
+      snackPosition: position,
+      backgroundColor: backgroundColor,
+      colorText: Colors.white,
+      duration: duration,
+      mainButton: action,
+    );
   }
 }

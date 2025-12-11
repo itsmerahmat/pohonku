@@ -2,10 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:treedocs/views/continuous_capture_page.dart';
 import 'package:treedocs/views/home_page.dart';
-// import 'package:treedocs/views/map_page.dart';
 import 'package:treedocs/views/session_form_page.dart';
 import 'package:treedocs/views/tree_detail_page.dart';
-// import 'package:treedocs/views/tree_form_page.dart';
 import 'package:treedocs/views/tree_list_page.dart';
 
 void main() async {
@@ -77,8 +75,6 @@ class PohonkuApp extends StatelessWidget {
         GetPage(name: '/session', page: () => const SessionFormPage()),
         GetPage(name: '/capture', page: () => const ContinuousCapturePage()),
         GetPage(name: '/detail', page: () => const TreeDetailPage()),
-        // GetPage(name: '/form', page: () => const TreeFormPage()),
-        // GetPage(name: '/map', page: () => const MapPage()),
       ],
     );
   }
