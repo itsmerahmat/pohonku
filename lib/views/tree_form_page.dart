@@ -26,14 +26,6 @@ class _TreeFormPageState extends State<TreeFormPage> {
     super.initState();
     formController = Get.put(TreeFormController());
     treeController = Get.find<TreeController>();
-    final TreeModel? existing = Get.arguments as TreeModel?;
-    formController.existing = existing;
-    if (existing != null) {
-      _varietasController.text = existing.varietas;
-      _blokController.text = existing.blok;
-      _nomorController.text = existing.nomorPohon;
-      formController.loadExistingPhotos(existing.photos);
-    }
   }
 
   @override
@@ -47,13 +39,12 @@ class _TreeFormPageState extends State<TreeFormPage> {
 
   @override
   Widget build(BuildContext context) {
-    final isEdit = formController.existing != null;
     final colorScheme = Theme.of(context).colorScheme;
     
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
-        title: Text(isEdit ? 'Ubah Data Pohon' : 'Tambah Data Pohon'),
+        title: const Text('Tambah Data Pohon'),
         elevation: 0,
       ),
       body: Form(
@@ -218,7 +209,7 @@ class _TreeFormPageState extends State<TreeFormPage> {
                           return Material(
                             color: Colors.transparent,
                             child: InkWell(
-                              onTap: () => _showPhotoSourceDialog(index),
+                              onTap: () => _handleCapture(index),
                               borderRadius: BorderRadius.circular(16),
                               child: Container(
                                 decoration: BoxDecoration(
@@ -386,84 +377,8 @@ class _TreeFormPageState extends State<TreeFormPage> {
     );
   }
 
-  void _showPhotoSourceDialog(int index) {
-    showModalBottomSheet(
-      context: context,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) => Container(
-        padding: const EdgeInsets.all(20),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 40,
-              height: 4,
-              decoration: BoxDecoration(
-                color: Colors.grey[300],
-                borderRadius: BorderRadius.circular(2),
-              ),
-            ),
-            const SizedBox(height: 20),
-            Text(
-              'Pilih Sumber Foto',
-              style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                fontWeight: FontWeight.bold,
-              ),
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.camera_alt, color: Colors.blue),
-              ),
-              title: const Text('Kamera'),
-              subtitle: const Text('Ambil foto dengan kamera'),
-              onTap: () {
-                Navigator.pop(context);
-                _handleCapture(index);
-              },
-            ),
-            const SizedBox(height: 8),
-            ListTile(
-              leading: Container(
-                padding: const EdgeInsets.all(8),
-                decoration: BoxDecoration(
-                  color: Colors.green.shade50,
-                  borderRadius: BorderRadius.circular(8),
-                ),
-                child: const Icon(Icons.photo_library, color: Colors.green),
-              ),
-              title: const Text('Galeri'),
-              subtitle: const Text('Pilih foto dari galeri'),
-              onTap: () {
-                Navigator.pop(context);
-                _handlePickFromGallery(index);
-              },
-            ),
-            const SizedBox(height: 20),
-          ],
-        ),
-      ),
-    );
-  }
-
   Future<void> _handleCapture(int index) async {
     await formController.capturePhoto(
-      index: index,
-      varietas: _varietasController.text.isEmpty ? 'VARIETAS' : _varietasController.text,
-      blok: _blokController.text.isEmpty ? 'BLOK' : _blokController.text,
-      nomorPohon: _nomorController.text.isEmpty ? 'NOMOR' : _nomorController.text,
-    );
-  }
-
-  Future<void> _handlePickFromGallery(int index) async {
-    await formController.pickPhoto(
       index: index,
       varietas: _varietasController.text.isEmpty ? 'VARIETAS' : _varietasController.text,
       blok: _blokController.text.isEmpty ? 'BLOK' : _blokController.text,
@@ -476,49 +391,33 @@ class _TreeFormPageState extends State<TreeFormPage> {
     final now = DateTime.now();
     final latLng = await treeController.getCurrentLatLng();
     final deviceName = await treeController.getDeviceName();
-    final photos = formController.toPhotoModels(formController.existing?.id);
+    final photos = formController.toPhotoModels(null);
     final fileType = photos.isNotEmpty ? photos.first.pathFile.split('.').last : 'jpg';
 
     final tree = TreeModel(
-      id: formController.existing?.id,
+      id: null,
       varietas: _varietasController.text,
       blok: _blokController.text,
       nomorPohon: _nomorController.text,
       latitude: latLng?[0],
       longitude: latLng?[1],
-      tanggalPengambilan: formController.existing?.tanggalPengambilan ?? now,
+      tanggalPengambilan: now,
       deviceName: deviceName,
       fileType: fileType,
       photos: photos,
     );
 
-    if (formController.existing == null) {
-      await treeController.addTree(tree);
-      Get.back();
-      Get.snackbar(
-        'Berhasil!',
-        'Data pohon berhasil ditambahkan',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        icon: const Icon(Icons.check_circle, color: Colors.white),
-        duration: const Duration(seconds: 2),
-      );
-    } else {
-      await treeController.updateTree(tree);
-      // Get updated tree data
-      final updatedTree = await treeController.getTreeById(tree.id!);
-      Get.back(result: updatedTree);
-      Get.snackbar(
-        'Berhasil!',
-        'Data pohon berhasil diperbarui',
-        snackPosition: SnackPosition.BOTTOM,
-        backgroundColor: Colors.green,
-        colorText: Colors.white,
-        icon: const Icon(Icons.check_circle, color: Colors.white),
-        duration: const Duration(seconds: 2),
-      );
-    }
+    await treeController.addTree(tree);
+    Get.back();
+    Get.snackbar(
+      'Berhasil!',
+      'Data pohon berhasil ditambahkan',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+      icon: const Icon(Icons.check_circle, color: Colors.white),
+      duration: const Duration(seconds: 2),
+    );
 
     formController.saving.value = false;
   }

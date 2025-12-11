@@ -132,7 +132,13 @@ class _TreeListPageState extends State<TreeListPage> {
               padding: const EdgeInsets.only(bottom: 12),
               child: TreeCard(
                 tree: tree,
-                onTap: () => Get.toNamed('/detail', arguments: tree),
+                onTap: () async {
+                  final result = await Get.toNamed('/detail', arguments: tree);
+                  // Reload list if tree was deleted
+                  if (result == true) {
+                    _loadTrees();
+                  }
+                },
               ),
             );
           },

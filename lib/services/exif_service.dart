@@ -1,6 +1,6 @@
 import 'dart:io';
 
-import 'package:exif/exif.dart';
+import 'package:native_exif/native_exif.dart';
 
 class ExifService {
   ExifService._internal();
@@ -13,78 +13,49 @@ class ExifService {
       final file = File(photoPath);
       if (!await file.exists()) return null;
 
-      final bytes = await file.readAsBytes();
-      final data = await readExifFromBytes(bytes);
+      // Open EXIF reader
+      final exif = await Exif.fromPath(photoPath);
+      
+      // Get GPS coordinates using native_exif getLatLong method
+      final latLong = await exif.getLatLong();
 
-      print('EXIF Data: $data');
+      // Close EXIF interface
+      await exif.close();
 
-      if (data.isEmpty) return null;
-
-      // Get GPS data
-      final gpsLat = data['GPS GPSLatitude'];
-      final gpsLatRef = data['GPS GPSLatitudeRef'];
-      final gpsLng = data['GPS GPSLongitude'];
-      final gpsLngRef = data['GPS GPSLongitudeRef'];
-
-      if (gpsLat == null || gpsLatRef == null || gpsLng == null || gpsLngRef == null) {
-        return null;
-      }
-
-      // Convert GPS coordinates to decimal degrees
-      final latitude = _convertGpsToDecimal(gpsLat.printable, gpsLatRef.printable);
-      final longitude = _convertGpsToDecimal(gpsLng.printable, gpsLngRef.printable);
-
-      if (latitude == null || longitude == null) return null;
+      if (latLong == null) return null;
 
       return {
-        'latitude': latitude,
-        'longitude': longitude,
+        'latitude': latLong.latitude,
+        'longitude': latLong.longitude,
       };
     } catch (e) {
-      // print('Error extracting EXIF GPS: $e');
       return null;
     }
   }
 
-  /// Convert GPS coordinate from EXIF format to decimal degrees
-  double? _convertGpsToDecimal(String coordinate, String ref) {
+  /// Write GPS coordinates to photo EXIF data
+  Future<bool> writeGpsToPhoto(String photoPath, double latitude, double longitude) async {
     try {
-      // Format: [46, 1, 37, 1, 2819, 100] atau "46/1, 37/1, 2819/100"
-      final parts = coordinate
-          .replaceAll('[', '')
-          .replaceAll(']', '')
-          .split(',')
-          .map((e) => e.trim())
-          .toList();
+      final file = File(photoPath);
+      if (!await file.exists()) return false;
 
-      if (parts.length < 3) return null;
+      // Open EXIF writer
+      final exif = await Exif.fromPath(photoPath);
+      
+      // Write GPS coordinates
+      await exif.writeAttributes({
+        'GPSLatitude': latitude.abs().toString(),
+        'GPSLatitudeRef': latitude >= 0 ? 'N' : 'S',
+        'GPSLongitude': longitude.abs().toString(),
+        'GPSLongitudeRef': longitude >= 0 ? 'E' : 'W',
+      });
 
-      double degrees = _parseFraction(parts[0]);
-      double minutes = _parseFraction(parts[1]);
-      double seconds = _parseFraction(parts[2]);
+      // Close EXIF interface
+      await exif.close();
 
-      double decimal = degrees + (minutes / 60) + (seconds / 3600);
-
-      // Apply reference (N/S for latitude, E/W for longitude)
-      if (ref == 'S' || ref == 'W') {
-        decimal = -decimal;
-      }
-
-      return decimal;
+      return true;
     } catch (e) {
-      // print('Error converting GPS coordinate: $e');
-      return null;
+      return false;
     }
-  }
-
-  /// Parse fraction string like "46/1" to decimal
-  double _parseFraction(String fraction) {
-    if (fraction.contains('/')) {
-      final parts = fraction.split('/');
-      final numerator = double.tryParse(parts[0]) ?? 0;
-      final denominator = double.tryParse(parts[1]) ?? 1;
-      return numerator / denominator;
-    }
-    return double.tryParse(fraction) ?? 0;
   }
 }

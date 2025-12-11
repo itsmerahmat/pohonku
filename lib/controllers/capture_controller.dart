@@ -6,7 +6,7 @@ import 'package:get/get.dart';
 import 'package:treedocs/controllers/tree_controller.dart';
 import 'package:treedocs/models/photo_model.dart';
 import 'package:treedocs/models/tree_model.dart';
-// import 'package:treedocs/services/exif_service.dart';
+import 'package:treedocs/services/exif_service.dart';
 import 'package:treedocs/services/photo_service.dart';
 
 class CaptureController extends GetxController {
@@ -19,7 +19,7 @@ class CaptureController extends GetxController {
   });
 
   final PhotoService _photoService = PhotoService();
-  // final ExifService _exifService = ExifService();
+  final ExifService _exifService = ExifService();
   final TreeController _treeController = Get.find<TreeController>();
 
   final RxList<String?> currentPhotos = <String?>[null, null, null, null].obs;
@@ -92,6 +92,61 @@ class CaptureController extends GetxController {
       );
       return;
     }
+
+    // Cek dan request permission lokasi
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      Get.snackbar(
+        'GPS Tidak Aktif',
+        'Aktifkan GPS untuk menyimpan koordinat lokasi pohon',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+        mainButton: TextButton(
+          onPressed: () async {
+            await Geolocator.openLocationSettings();
+            Get.back();
+          },
+          child: const Text('Aktifkan', style: TextStyle(color: Colors.white)),
+        ),
+      );
+      // Lanjutkan tanpa GPS
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        Get.snackbar(
+          'Izin Lokasi Ditolak',
+          'Foto akan disimpan tanpa koordinat GPS',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+        // Lanjutkan tanpa GPS
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      Get.snackbar(
+        'Izin Lokasi Ditolak Permanen',
+        'Aktifkan izin lokasi di pengaturan untuk menyimpan GPS',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.orange,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+        mainButton: TextButton(
+          onPressed: () async {
+            await Geolocator.openAppSettings();
+            Get.back();
+          },
+          child: const Text('Pengaturan', style: TextStyle(color: Colors.white)),
+        ),
+      );
+      // Lanjutkan tanpa GPS
+    }
     
     // Initialize camera jika belum
     if (cameraController == null || !cameraController!.value.isInitialized) {
@@ -134,18 +189,17 @@ class CaptureController extends GetxController {
     try {
       final index = currentPhotoIndex.value;
 
-      // Ambil koordinat GPS saat ini (jika foto pertama)
-      if (index == 0) {
-        try {
-          final position = await Geolocator.getCurrentPosition(
-            desiredAccuracy: LocationAccuracy.high,
-            timeLimit: const Duration(seconds: 5),
-          );
-          currentLatitude = position.latitude;
-          currentLongitude = position.longitude;
-        } catch (e) {
-          // GPS gagal, koordinat tetap null
-        }
+      // Ambil GPS dari Geolocator untuk setiap foto
+      try {
+        final position = await Geolocator.getCurrentPosition(
+          desiredAccuracy: LocationAccuracy.high,
+          timeLimit: const Duration(seconds: 5),
+        );
+        currentLatitude = position.latitude;
+        currentLongitude = position.longitude;
+      } catch (e) {
+        currentLatitude = null;
+        currentLongitude = null;
       }
 
       // Capture foto
@@ -161,6 +215,15 @@ class CaptureController extends GetxController {
       );
 
       if (savedPath != null) {
+        // Tulis GPS ke EXIF jika tersedia
+        if (currentLatitude != null && currentLongitude != null) {
+          await _exifService.writeGpsToPhoto(
+            savedPath,
+            currentLatitude!,
+            currentLongitude!,
+          );
+        }
+
         currentPhotos[index] = savedPath;
         currentPhotoIndex.value++;
 
@@ -212,13 +275,26 @@ class CaptureController extends GetxController {
     final androidInfo = await deviceInfo.androidInfo;
     final deviceName = '${androidInfo.manufacturer} ${androidInfo.model}';
 
+    // Ambil GPS dari EXIF foto (coba foto pertama sampai keempat)
+    double? latitude;
+    double? longitude;
+
+    for (final photo in photos) {
+      final gpsData = await _exifService.extractGpsFromPhoto(photo.pathFile);
+      if (gpsData != null) {
+        latitude = gpsData['latitude'];
+        longitude = gpsData['longitude'];
+        break;
+      }
+    }
+    
     final tree = TreeModel(
       id: null,
       varietas: varietas,
       blok: blok,
       nomorPohon: currentTreeId.value,
-      latitude: currentLatitude,
-      longitude: currentLongitude,
+      latitude: latitude,
+      longitude: longitude,
       tanggalPengambilan: DateTime.now(),
       deviceName: deviceName,
       fileType: fileType,

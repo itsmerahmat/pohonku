@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
+import 'package:treedocs/controllers/group_controller.dart';
 import 'package:treedocs/controllers/tree_controller.dart';
 import 'package:treedocs/models/tree_model.dart';
 
@@ -25,15 +26,6 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
     controller = Get.find<TreeController>();
   }
 
-  Future<void> _navigateToEdit() async {
-    final result = await Get.toNamed('/form', arguments: tree);
-    if (result != null && result is TreeModel) {
-      setState(() {
-        tree = result;
-      });
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
     final formatter = DateFormat('dd MMM yyyy HH:mm');
@@ -45,11 +37,6 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
         elevation: 0,
         title: const Text('Detail Pohon'),
         actions: [
-          IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: _navigateToEdit,
-            tooltip: 'Edit',
-          ),
           IconButton(
             icon: const Icon(Icons.delete_outline),
             tooltip: 'Hapus',
@@ -77,7 +64,14 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
               );
               if (confirmed == true) {
                 await controller.removeTree(tree);
-                Get.back();
+                
+                // Refresh home page
+                final groupController = Get.find<GroupController>();
+                groupController.loadGroups();
+                
+                // Return true to trigger tree list refresh
+                Get.back(result: true);
+                
                 Get.snackbar(
                   'Berhasil!',
                   'Data pohon berhasil dihapus',
