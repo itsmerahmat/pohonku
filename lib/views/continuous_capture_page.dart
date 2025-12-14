@@ -193,6 +193,57 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                 ],
               ),
             ),
+            const SizedBox(height: 12),
+
+            // Pengaturan getaran
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(16),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 2),
+                  ),
+                ],
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.vibration, color: Colors.blue),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Getaran saat foto',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        SizedBox(height: 4),
+                        Text(
+                          'Aktifkan atau nonaktifkan getaran ketika foto berhasil diambil',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey,
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Obx(() => Switch(
+                        value: controller.isVibrationEnabled.value,
+                        onChanged: (value) {
+                          controller.isVibrationEnabled.value = value;
+                        },
+                      )),
+                ],
+              ),
+            ),
             const SizedBox(height: 20),
 
             // Camera Preview (jika ready mode)
