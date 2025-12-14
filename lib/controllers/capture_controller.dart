@@ -1,6 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:treedocs/controllers/tree_controller.dart';
@@ -29,6 +30,7 @@ class CaptureController extends GetxController {
   final RxInt savedTreesCount = 0.obs;
   final RxBool isCapturing = false.obs;
   final RxBool isReady = false.obs; // Ready untuk capture
+  final RxBool isVibrationEnabled = true.obs;
   
   CameraController? cameraController;
   final Rx<CameraDescription?> selectedCamera = Rx<CameraDescription?>(null);
@@ -215,6 +217,10 @@ class CaptureController extends GetxController {
       );
 
       if (savedPath != null) {
+        if (isVibrationEnabled.value) {
+          await HapticFeedback.mediumImpact();
+        }
+
         // Tulis GPS ke EXIF jika tersedia
         if (currentLatitude != null && currentLongitude != null) {
           await _exifService.writeGpsToPhoto(
