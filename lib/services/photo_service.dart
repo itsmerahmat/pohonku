@@ -17,7 +17,8 @@ class PhotoService {
     required String nomorPohon,
   }) async {
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.camera, imageQuality: 85);
+    // Ambil foto dengan kualitas penuh (tanpa kompresi).
+    final file = await picker.pickImage(source: ImageSource.camera);
     if (file == null) return null;
 
     return _savePhoto(file, urutan, varietas, blok, nomorPohon);
@@ -31,7 +32,8 @@ class PhotoService {
     required String nomorPohon,
   }) async {
     final picker = ImagePicker();
-    final file = await picker.pickImage(source: ImageSource.gallery, imageQuality: 85);
+    // Ambil foto dari galeri tanpa penurunan kualitas.
+    final file = await picker.pickImage(source: ImageSource.gallery);
     if (file == null) return null;
 
     return _savePhoto(file, urutan, varietas, blok, nomorPohon);
