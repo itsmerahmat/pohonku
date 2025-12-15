@@ -27,6 +27,7 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
     controller = Get.put(CaptureController(
       varietas: args['varietas'],
       blok: args['blok'],
+      autoIdMode: args['autoIdMode'] ?? false,
     ));
     
     // Initialize camera
@@ -155,95 +156,143 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
             ),
             const SizedBox(height: 20),
 
-            // ID Pohon Input
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
+            // ID Pohon Input or Auto Badge
+            if (controller.autoIdMode)
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      colorScheme.secondaryContainer,
+                      colorScheme.secondaryContainer.withValues(alpha: 0.7),
+                    ],
                   ),
-                ],
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  const Text(
-                    'ID Pohon',
-                    style: TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.bold,
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons.auto_fix_high,
+                      color: colorScheme.secondary,
+                      size: 24,
                     ),
-                  ),
-                  const SizedBox(height: 12),
-                  TextField(
-                    controller: _idPohonController,
-                    decoration: const InputDecoration(
-                      hintText: 'Contoh: 001',
-                      prefixIcon: Icon(Icons.numbers),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            'Mode ID Otomatis',
+                            style: TextStyle(
+                              fontSize: 14,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.onSecondaryContainer,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Obx(() => Text(
+                            'ID Pohon: ${controller.currentTreeId.value.isEmpty ? "---" : controller.currentTreeId.value}',
+                            style: TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.bold,
+                              color: colorScheme.secondary,
+                            ),
+                          )),
+                        ],
+                      ),
                     ),
-                    onChanged: (value) {
-                      controller.currentTreeId.value = value;
-                    },
-                  ),
-                ],
+                  ],
+                ),
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(16),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.05),
+                      blurRadius: 10,
+                      offset: const Offset(0, 2),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'ID Pohon',
+                      style: TextStyle(
+                        fontSize: 16,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 12),
+                    TextField(
+                      controller: _idPohonController,
+                      decoration: const InputDecoration(
+                        hintText: 'Contoh: 001',
+                        prefixIcon: Icon(Icons.numbers),
+                      ),
+                      onChanged: (value) {
+                        controller.currentTreeId.value = value;
+                      },
+                    ),
+                  ],
+                ),
               ),
-            ),
-            const SizedBox(height: 12),
+            // const SizedBox(height: 12),
 
-            // Pengaturan getaran
-            Container(
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(16),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 2),
-                  ),
-                ],
-              ),
-              child: Row(
-                children: [
-                  const Icon(Icons.vibration, color: Colors.blue),
-                  const SizedBox(width: 12),
-                  const Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          'Getaran saat foto',
-                          style: TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                        SizedBox(height: 4),
-                        Text(
-                          'Aktifkan atau nonaktifkan getaran ketika foto berhasil diambil',
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  Obx(() => Switch(
-                        value: controller.isVibrationEnabled.value,
-                        onChanged: (value) {
-                          controller.isVibrationEnabled.value = value;
-                        },
-                      )),
-                ],
-              ),
-            ),
+            // // Pengaturan getaran
+            // Container(
+            //   padding: const EdgeInsets.all(16),
+            //   decoration: BoxDecoration(
+            //     color: Colors.white,
+            //     borderRadius: BorderRadius.circular(16),
+            //     boxShadow: [
+            //       BoxShadow(
+            //         color: Colors.black.withValues(alpha: 0.05),
+            //         blurRadius: 10,
+            //         offset: const Offset(0, 2),
+            //       ),
+            //     ],
+            //   ),
+            //   child: Row(
+            //     children: [
+            //       const Icon(Icons.vibration, color: Colors.blue),
+            //       const SizedBox(width: 12),
+            //       const Expanded(
+            //         child: Column(
+            //           crossAxisAlignment: CrossAxisAlignment.start,
+            //           children: [
+            //             Text(
+            //               'Getaran saat foto',
+            //               style: TextStyle(
+            //                 fontSize: 16,
+            //                 fontWeight: FontWeight.bold,
+            //               ),
+            //             ),
+            //             SizedBox(height: 4),
+            //             Text(
+            //               'Aktifkan atau nonaktifkan getaran ketika foto berhasil diambil',
+            //               style: TextStyle(
+            //                 fontSize: 12,
+            //                 color: Colors.grey,
+            //               ),
+            //             ),
+            //           ],
+            //         ),
+            //       ),
+            //       Obx(() => Switch(
+            //             value: controller.isVibrationEnabled.value,
+            //             onChanged: (value) {
+            //               controller.isVibrationEnabled.value = value;
+            //             },
+            //           )),
+            //     ],
+            //   ),
+            // ),
             const SizedBox(height: 20),
 
             // Camera Preview (jika ready mode)
@@ -503,7 +552,7 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
 
             // Action Buttons
             Obx(() {
-              final canCapture = controller.currentTreeId.value.isNotEmpty;
+              final canCapture = controller.autoIdMode || controller.currentTreeId.value.isNotEmpty;
               final photoIndex = controller.currentPhotoIndex.value;
               final isCompleted = photoIndex >= 4;
 

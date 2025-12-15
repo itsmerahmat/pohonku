@@ -16,6 +16,7 @@ class _SessionFormPageState extends State<SessionFormPage> {
   final _blokController = TextEditingController();
   bool _isGpsEnabled = false;
   bool _checkingGps = true;
+  bool _autoIdMode = false;
 
   @override
   void initState() {
@@ -174,6 +175,56 @@ class _SessionFormPageState extends State<SessionFormPage> {
                       validator: (value) =>
                           value == null || value.isEmpty ? 'Wajib diisi' : null,
                     ),
+                    const SizedBox(height: 20),
+                    Container(
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                        borderRadius: BorderRadius.circular(12),
+                        border: Border.all(
+                          color: colorScheme.primary.withValues(alpha: 0.2),
+                        ),
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(
+                            Icons.auto_fix_high,
+                            color: colorScheme.primary,
+                            size: 20,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  'Mode ID Otomatis',
+                                  style: TextStyle(
+                                    fontSize: 14,
+                                    fontWeight: FontWeight.bold,
+                                    color: colorScheme.onPrimaryContainer,
+                                  ),
+                                ),
+                                const SizedBox(height: 2),
+                                Text(
+                                  'ID pohon otomatis increment',
+                                  style: TextStyle(
+                                    fontSize: 12,
+                                    color: colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                          Switch(
+                            value: _autoIdMode,
+                            onChanged: (value) {
+                              setState(() => _autoIdMode = value);
+                            },
+                          ),
+                        ],
+                      ),
+                    ),
                   ],
                 ),
               ),
@@ -319,6 +370,7 @@ class _SessionFormPageState extends State<SessionFormPage> {
     Get.toNamed('/capture', arguments: {
       'varietas': args?['varietas'] ?? _varietasController.text,
       'blok': args?['blok'] ?? _blokController.text,
+      'autoIdMode': _autoIdMode,
     });
   }
 }

@@ -1,7 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
+// import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 import 'package:treedocs/controllers/tree_controller.dart';
@@ -13,10 +13,12 @@ import 'package:treedocs/services/photo_service.dart';
 class CaptureController extends GetxController {
   final String varietas;
   final String blok;
+  final bool autoIdMode;
 
   CaptureController({
     required this.varietas,
     required this.blok,
+    this.autoIdMode = false,
   });
 
   final PhotoService _photoService = PhotoService();
@@ -30,7 +32,7 @@ class CaptureController extends GetxController {
   final RxInt savedTreesCount = 0.obs;
   final RxBool isCapturing = false.obs;
   final RxBool isReady = false.obs; // Ready untuk capture
-  final RxBool isVibrationEnabled = true.obs;
+  // final RxBool isVibrationEnabled = true.obs;
   
   CameraController? cameraController;
   final Rx<CameraDescription?> selectedCamera = Rx<CameraDescription?>(null);
@@ -84,6 +86,11 @@ class CaptureController extends GetxController {
 
   /// Mulai capture 4 foto berurutan dengan camera package
   Future<void> startContinuousCapture() async {
+    // Auto set ID jika mode auto aktif
+    if (autoIdMode && currentTreeId.value.isEmpty) {
+      currentTreeId.value = currentTreeNumber.value.toString().padLeft(3, '0');
+    }
+    
     if (currentTreeId.value.isEmpty) {
       Get.snackbar(
         'Peringatan',
@@ -217,9 +224,9 @@ class CaptureController extends GetxController {
       );
 
       if (savedPath != null) {
-        if (isVibrationEnabled.value) {
-          await HapticFeedback.mediumImpact();
-        }
+        // if (isVibrationEnabled.value) {
+        //   await HapticFeedback.mediumImpact();
+        // }
 
         // Tulis GPS ke EXIF jika tersedia
         if (currentLatitude != null && currentLongitude != null) {
@@ -236,7 +243,14 @@ class CaptureController extends GetxController {
         // Auto save jika sudah 4 foto
         if (currentPhotoIndex.value >= 4) {
           await _saveCurrentTree();
-          isReady.value = false;
+          
+          // Auto next tree jika mode auto aktif
+          if (autoIdMode) {
+            startNewTree();
+            await startContinuousCapture();
+          } else {
+            isReady.value = false;
+          }
         }
       } else {
         Get.snackbar(
@@ -315,8 +329,15 @@ class CaptureController extends GetxController {
   void startNewTree() {
     currentPhotos.assignAll([null, null, null, null]);
     currentPhotoIndex.value = 0;
-    currentTreeId.value = '';
     currentTreeNumber.value++;
+    
+    // Auto set ID jika mode auto
+    if (autoIdMode) {
+      currentTreeId.value = currentTreeNumber.value.toString().padLeft(3, '0');
+    } else {
+      currentTreeId.value = '';
+    }
+    
     isReady.value = false;
     currentLatitude = null;
     currentLongitude = null;
