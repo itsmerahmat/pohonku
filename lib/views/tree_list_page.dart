@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 import 'package:treedocs/models/tree_model.dart';
 import 'package:treedocs/services/db_service.dart';
+import 'package:treedocs/services/export_service.dart';
 import 'package:treedocs/views/widgets/tree_card.dart';
 
 class TreeListPage extends StatefulWidget {
@@ -41,6 +42,102 @@ class _TreeListPageState extends State<TreeListPage> {
     loading.value = false;
   }
 
+  Future<void> _showExportDialog() async {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Export Foto'),
+        content: Text('Export semua foto dari $varietas - Blok $blok?\n\nFile ZIP akan disimpan ke folder Download.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Batal'),
+          ),
+          FilledButton(
+            onPressed: () {
+              Navigator.pop(context);
+              _exportPhotos();
+            },
+            child: const Text('Export'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportPhotos() async {
+    // Show loading
+    Get.dialog(
+      const Center(
+        child: Card(
+          child: Padding(
+            padding: EdgeInsets.all(24),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                CircularProgressIndicator(),
+                SizedBox(height: 16),
+                Text('Mengexport foto...'),
+              ],
+            ),
+          ),
+        ),
+      ),
+      barrierDismissible: false,
+    );
+
+    try {
+      if (trees.isEmpty) {
+        Get.back();
+        Get.snackbar(
+          'Peringatan',
+          'Tidak ada foto untuk diexport',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.orange,
+          colorText: Colors.white,
+        );
+        return;
+      }
+
+      final exportService = ExportService();
+      final zipPath = await exportService.exportPhotosByGroup(
+        trees.toList(),
+        varietas,
+        blok,
+      );
+
+      Get.back(); // Close loading
+
+      if (zipPath != null) {
+        Get.snackbar(
+          'Berhasil!',
+          'Foto berhasil diexport ke:\n$zipPath',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.green,
+          colorText: Colors.white,
+          duration: const Duration(seconds: 5),
+        );
+      } else {
+        Get.snackbar(
+          'Gagal',
+          'Gagal mengexport foto. Pastikan izin storage diaktifkan',
+          snackPosition: SnackPosition.BOTTOM,
+          backgroundColor: Colors.red,
+          colorText: Colors.white,
+        );
+      }
+    } catch (e) {
+      Get.back(); // Close loading
+      Get.snackbar(
+        'Error',
+        'Terjadi kesalahan: ${e.toString()}',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -57,6 +154,11 @@ class _TreeListPageState extends State<TreeListPage> {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.download),
+            onPressed: _showExportDialog,
+            tooltip: 'Export Foto',
+          ),
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadTrees,

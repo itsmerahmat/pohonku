@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:treedocs/views/continuous_capture_page.dart';
 import 'package:treedocs/views/home_page.dart';
@@ -10,6 +11,9 @@ import 'package:treedocs/views/tree_list_page.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await SystemChrome.setPreferredOrientations([
+    DeviceOrientation.portraitUp,
+  ]);
   runApp(const PohonkuApp());
 }
 

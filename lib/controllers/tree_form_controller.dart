@@ -1,7 +1,6 @@
 import 'package:get/get.dart';
 import 'package:treedocs/models/photo_model.dart';
 import 'package:treedocs/models/tree_model.dart';
-import 'package:treedocs/services/photo_service.dart';
 
 class TreeFormController extends GetxController {
   final RxList<String?> photoPaths = <String?>[null, null, null, null].obs;
@@ -10,8 +9,6 @@ class TreeFormController extends GetxController {
   /// Menyimpan state apakah sedang mode edit serta data lama.
   TreeModel? existing;
 
-  final PhotoService _photoService = PhotoService();
-
   /// Mengambil foto untuk slot tertentu lalu menyimpannya ke storage lokal.
   Future<void> capturePhoto({
     required int index,
@@ -19,20 +16,11 @@ class TreeFormController extends GetxController {
     required String blok,
     required String nomorPohon,
   }) async {
-    final savedPath = await _photoService.captureAndSave(
-      urutan: index + 1,
-      varietas: varietas,
-      blok: blok,
-      nomorPohon: nomorPohon,
+    Get.snackbar(
+      'Fitur dinonaktifkan',
+      'Pengambilan foto via form memakai image_picker sudah dihapus. Gunakan mode capture utama.',
+      snackPosition: SnackPosition.BOTTOM,
     );
-    if (savedPath != null) {
-      // Jika ada foto lama di slot ini, hapus agar tidak menumpuk di storage.
-      final oldPath = photoPaths[index];
-      photoPaths[index] = savedPath;
-      if (oldPath != null && oldPath != savedPath) {
-        await _photoService.deletePhoto(oldPath);
-      }
-    }
   }
 
   /// Memilih foto dari galeri untuk slot tertentu lalu menyimpannya ke storage lokal.
@@ -42,20 +30,11 @@ class TreeFormController extends GetxController {
     required String blok,
     required String nomorPohon,
   }) async {
-    final savedPath = await _photoService.pickFromGallery(
-      urutan: index + 1,
-      varietas: varietas,
-      blok: blok,
-      nomorPohon: nomorPohon,
+    Get.snackbar(
+      'Fitur dinonaktifkan',
+      'Pemilihan foto galeri via form memakai image_picker sudah dihapus.',
+      snackPosition: SnackPosition.BOTTOM,
     );
-    if (savedPath != null) {
-      // Jika ada foto lama di slot ini, hapus agar tidak menumpuk di storage.
-      final oldPath = photoPaths[index];
-      photoPaths[index] = savedPath;
-      if (oldPath != null && oldPath != savedPath) {
-        await _photoService.deletePhoto(oldPath);
-      }
-    }
   }
 
   /// Mengisi foto ketika mode edit sehingga user bisa melihat preview.
@@ -70,11 +49,9 @@ class TreeFormController extends GetxController {
 
   /// Menghapus foto di slot tertentu.
   Future<void> removePhoto(int index) async {
-    final current = photoPaths[index];
     photoPaths[index] = null;
-    if (current != null) {
-      await _photoService.deletePhoto(current);
-    }
+    // Penghapusan file tetap dilakukan oleh flow utama (TreeController) saat delete entry.
+    // Di form legacy ini, kita hanya mengosongkan slot.
   }
 
   /// Mengonversi jalur foto menjadi objek PhotoModel untuk penyimpanan DB.
