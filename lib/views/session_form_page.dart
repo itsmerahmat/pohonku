@@ -14,6 +14,7 @@ class _SessionFormPageState extends State<SessionFormPage> {
   final _formKey = GlobalKey<FormState>();
   final _varietasController = TextEditingController();
   final _blokController = TextEditingController();
+  final _photoCountController = TextEditingController(text: '4');
   bool _isGpsEnabled = false;
   bool _checkingGps = true;
   bool _autoIdMode = false;
@@ -21,14 +22,14 @@ class _SessionFormPageState extends State<SessionFormPage> {
   @override
   void initState() {
     super.initState();
-    
+
     // Pre-fill jika ada arguments dari tree_list_page
     final args = Get.arguments as Map<String, dynamic>?;
     if (args != null) {
       _varietasController.text = args['varietas'] ?? '';
       _blokController.text = args['blok'] ?? '';
     }
-    
+
     _checkGpsStatus();
   }
 
@@ -36,6 +37,7 @@ class _SessionFormPageState extends State<SessionFormPage> {
   void dispose() {
     _varietasController.dispose();
     _blokController.dispose();
+    _photoCountController.dispose();
     super.dispose();
   }
 
@@ -45,10 +47,7 @@ class _SessionFormPageState extends State<SessionFormPage> {
 
     return Scaffold(
       backgroundColor: Colors.grey[50],
-      appBar: AppBar(
-        title: const Text('Mulai Sesi Pendataan'),
-        elevation: 0,
-      ),
+      appBar: AppBar(title: const Text('Mulai Sesi Pendataan'), elevation: 0),
       body: Form(
         key: _formKey,
         child: SingleChildScrollView(
@@ -100,8 +99,9 @@ class _SessionFormPageState extends State<SessionFormPage> {
                             'Isi data blok untuk mulai dokumentasi',
                             style: TextStyle(
                               fontSize: 13,
-                              color: colorScheme.onPrimaryContainer
-                                  .withValues(alpha: 0.7),
+                              color: colorScheme.onPrimaryContainer.withValues(
+                                alpha: 0.7,
+                              ),
                             ),
                           ),
                         ],
@@ -175,11 +175,31 @@ class _SessionFormPageState extends State<SessionFormPage> {
                       validator: (value) =>
                           value == null || value.isEmpty ? 'Wajib diisi' : null,
                     ),
+                    const SizedBox(height: 16),
+                    TextFormField(
+                      controller: _photoCountController,
+                      keyboardType: TextInputType.number,
+                      decoration: const InputDecoration(
+                        labelText: 'Jumlah Foto per Pohon',
+                        hintText: 'Minimal 4, harus genap (mis. 4, 6, 8)',
+                        prefixIcon: Icon(Icons.photo_library),
+                      ),
+                      validator: (value) {
+                        final trimmed = value?.trim() ?? '';
+                        final parsed = int.tryParse(trimmed);
+                        if (parsed == null) return 'Masukkan angka';
+                        if (parsed < 4) return 'Minimal 4';
+                        if (parsed.isOdd) return 'Harus kelipatan 2 (genap)';
+                        return null;
+                      },
+                    ),
                     const SizedBox(height: 20),
                     Container(
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
-                        color: colorScheme.primaryContainer.withValues(alpha: 0.3),
+                        color: colorScheme.primaryContainer.withValues(
+                          alpha: 0.3,
+                        ),
                         borderRadius: BorderRadius.circular(12),
                         border: Border.all(
                           color: colorScheme.primary.withValues(alpha: 0.2),
@@ -210,7 +230,8 @@ class _SessionFormPageState extends State<SessionFormPage> {
                                   'ID pohon otomatis increment',
                                   style: TextStyle(
                                     fontSize: 12,
-                                    color: colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                                    color: colorScheme.onPrimaryContainer
+                                        .withValues(alpha: 0.7),
                                   ),
                                 ),
                               ],
@@ -242,7 +263,11 @@ class _SessionFormPageState extends State<SessionFormPage> {
                   ),
                   child: Row(
                     children: [
-                      Icon(Icons.warning, color: Colors.orange.shade700, size: 24),
+                      Icon(
+                        Icons.warning,
+                        color: Colors.orange.shade700,
+                        size: 24,
+                      ),
                       const SizedBox(width: 12),
                       Expanded(
                         child: Column(
@@ -328,7 +353,7 @@ class _SessionFormPageState extends State<SessionFormPage> {
 
   Future<void> _checkGpsStatus() async {
     setState(() => _checkingGps = true);
-    
+
     try {
       final serviceEnabled = await Geolocator.isLocationServiceEnabled();
       setState(() {
@@ -365,12 +390,18 @@ class _SessionFormPageState extends State<SessionFormPage> {
   void _handleStart() {
     if (!_formKey.currentState!.validate()) return;
 
+    final photoCount = int.tryParse(_photoCountController.text.trim()) ?? 4;
+
     final args = Get.arguments as Map<String, dynamic>?;
-    
-    Get.toNamed('/capture', arguments: {
-      'varietas': args?['varietas'] ?? _varietasController.text,
-      'blok': args?['blok'] ?? _blokController.text,
-      'autoIdMode': _autoIdMode,
-    });
+
+    Get.toNamed(
+      '/capture',
+      arguments: {
+        'varietas': args?['varietas'] ?? _varietasController.text,
+        'blok': args?['blok'] ?? _blokController.text,
+        'autoIdMode': _autoIdMode,
+        'photoCount': photoCount,
+      },
+    );
   }
 }

@@ -23,9 +23,11 @@ class TreeController extends GetxController {
   }
 
   /// Menyimpan entri pohon baru ke database.
-  Future<int> addTree(TreeModel tree) async {
+  Future<int> addTree(TreeModel tree, {bool refresh = true}) async {
     final id = await _dbService.insertTree(tree);
-    await loadTrees();
+    if (refresh) {
+      await loadTrees();
+    }
     return id;
   }
 

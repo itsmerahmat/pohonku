@@ -29,6 +29,7 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
         varietas: args['varietas'],
         blok: args['blok'],
         autoIdMode: args['autoIdMode'] ?? false,
+        photoCount: (args['photoCount'] as int?) ?? 4,
       ),
     );
 
@@ -51,7 +52,6 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
   // Handle key events dari bluetooth remote atau volume buttons
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (event is KeyDownEvent) {
-      // Volume Up, Volume Down, Enter, atau Space dari bluetooth remote
       if (event.logicalKey == LogicalKeyboardKey.audioVolumeUp ||
           event.logicalKey == LogicalKeyboardKey.audioVolumeDown ||
           event.logicalKey == LogicalKeyboardKey.enter ||
@@ -81,11 +81,16 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
           title: Obx(() => Text('Pohon ${controller.currentTreeNumber.value}')),
           elevation: 0,
           actions: [
-            IconButton(
-              icon: const Icon(Icons.check),
-              onPressed: _handleFinish,
-              tooltip: 'Selesai',
-            ),
+            Obx(() {
+              final isBusy =
+                  controller.isFinalizing.value ||
+                  controller.isProcessingPhotos.any((p) => p);
+              return IconButton(
+                icon: const Icon(Icons.check),
+                onPressed: isBusy ? null : _handleFinish,
+                tooltip: 'Selesai',
+              );
+            }),
           ],
         ),
         body: SingleChildScrollView(
@@ -376,7 +381,7 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                                 borderRadius: BorderRadius.circular(25),
                               ),
                               child: Text(
-                                'Foto ${controller.currentPhotoIndex.value + 1}/4',
+                                'Foto ${controller.currentPhotoIndex.value + 1}/${controller.totalPhotos}',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 18,
@@ -453,7 +458,7 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                         ),
                         Obx(
                           () => Text(
-                            '${controller.currentPhotoIndex.value}/4',
+                            '${controller.currentPhotoIndex.value}/${controller.totalPhotos}',
                             style: TextStyle(
                               fontSize: 14,
                               color: Colors.grey[600],
@@ -476,7 +481,7 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                               crossAxisSpacing: 10,
                               childAspectRatio: 1,
                             ),
-                        itemCount: 4,
+                        itemCount: controller.totalPhotos,
                         itemBuilder: (_, index) {
                           final path = photos[index];
                           final isProcessing =
@@ -556,6 +561,9 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                                         Image.file(
                                           File(path),
                                           fit: BoxFit.cover,
+                                          cacheWidth: 600,
+                                          cacheHeight: 600,
+                                          filterQuality: FilterQuality.low,
                                         ),
                                         Positioned(
                                           bottom: 8,
@@ -609,14 +617,17 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                     controller.autoIdMode ||
                     controller.currentTreeId.value.isNotEmpty;
                 final photoIndex = controller.currentPhotoIndex.value;
-                final isCompleted = photoIndex >= 4;
+                final isCompleted = photoIndex >= controller.totalPhotos;
+                final isBusy =
+                    controller.isFinalizing.value ||
+                    controller.isProcessingPhotos.any((p) => p);
 
                 if (isCompleted) {
                   return Row(
                     children: [
                       Expanded(
                         child: FilledButton.icon(
-                          onPressed: _handleNextTree,
+                          onPressed: isBusy ? null : _handleNextTree,
                           style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
@@ -636,7 +647,7 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: _handleFinish,
+                          onPressed: isBusy ? null : _handleFinish,
                           style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 14),
                             shape: RoundedRectangleBorder(
@@ -644,9 +655,9 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                             ),
                           ),
                           icon: const Icon(Icons.check),
-                          label: const Text(
-                            'Selesai',
-                            style: TextStyle(
+                          label: Text(
+                            isBusy ? 'Menyimpan…' : 'Selesai',
+                            style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
                             ),
@@ -677,7 +688,7 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                             ),
                             icon: const Icon(Icons.camera_alt),
                             label: Text(
-                              'Ambil Foto ${photoIndex + 1}',
+                              'Ambil Foto ${photoIndex + 1}/${controller.totalPhotos}',
                               style: const TextStyle(
                                 fontSize: 16,
                                 fontWeight: FontWeight.bold,

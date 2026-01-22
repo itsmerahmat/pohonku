@@ -1,5 +1,6 @@
 import 'package:camera/camera.dart';
 import 'package:device_info_plus/device_info_plus.dart';
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
@@ -14,30 +15,37 @@ class CaptureController extends GetxController {
   final String varietas;
   final String blok;
   final bool autoIdMode;
+  final int totalPhotos;
+
+  static int _normalizePhotoCount(int value) {
+    if (value < 4) return 4;
+    if (value.isOdd) return value + 1;
+    return value;
+  }
 
   CaptureController({
     required this.varietas,
     required this.blok,
     this.autoIdMode = false,
-  });
+    int photoCount = 4,
+  }) : totalPhotos = _normalizePhotoCount(photoCount) {
+    currentPhotos.assignAll(List<String?>.filled(totalPhotos, null));
+    isProcessingPhotos.assignAll(List<bool>.filled(totalPhotos, false));
+  }
 
   final PhotoService _photoService = PhotoService();
   final ExifService _exifService = ExifService();
   final TreeController _treeController = Get.find<TreeController>();
 
-  final RxList<String?> currentPhotos = <String?>[null, null, null, null].obs;
-  final RxList<bool> isProcessingPhotos = <bool>[
-    false,
-    false,
-    false,
-    false,
-  ].obs;
+  final RxList<String?> currentPhotos = <String?>[].obs;
+  final RxList<bool> isProcessingPhotos = <bool>[].obs;
   final RxInt currentPhotoIndex = 0.obs;
   final RxString currentTreeId = ''.obs;
   final RxInt currentTreeNumber = 1.obs;
   final RxInt savedTreesCount = 0.obs;
   final RxBool isCapturing = false.obs;
   final RxBool isReady = false.obs; // Ready untuk capture
+  final RxBool isFinalizing = false.obs;
   // final RxBool isVibrationEnabled = true.obs;
 
   CameraController? cameraController;
@@ -132,10 +140,9 @@ class CaptureController extends GetxController {
       selectedCamera.value = cameras.first;
       cameraController = CameraController(
         cameras.first,
-        // NOTE: `max` sering menghasilkan file sangat besar dan memperlambat
-        // capture + post-processing. `veryHigh` biasanya sudah cukup tajam
-        // untuk output 12MP yang kita simpan (3000x4000).
-        ResolutionPreset.veryHigh,
+        // Gunakan resolusi maksimum untuk mendapatkan foto 12MP+
+        // Kebanyakan HP modern menghasilkan 12-48MP dengan rasio 4:3
+        ResolutionPreset.max,
         enableAudio: false,
         imageFormatGroup: ImageFormatGroup.jpeg,
       );
@@ -276,7 +283,7 @@ class CaptureController extends GetxController {
 
     Get.snackbar(
       'Siap Capture!',
-      'Tekan tombol shutter atau remote bluetooth untuk mengambil foto',
+      'Tekan tombol shutter atau remote bluetooth untuk mengambil foto ($totalPhotos foto)',
       snackPosition: SnackPosition.TOP,
       backgroundColor: Colors.blue,
       colorText: Colors.white,
@@ -287,7 +294,7 @@ class CaptureController extends GetxController {
   /// Capture single photo (dipanggil saat tombol volume/remote ditekan)
   Future<void> capturePhoto() async {
     if (!isReady.value) return;
-    if (currentPhotoIndex.value >= 4) return;
+    if (currentPhotoIndex.value >= totalPhotos) return;
     if (_isTakingPicture) return;
 
     final controller = cameraController;
@@ -320,7 +327,7 @@ class CaptureController extends GetxController {
       currentPhotoIndex.value++;
 
       // Update GPS di background untuk foto berikutnya
-      if (index < 3) {
+      if (index < totalPhotos - 1) {
         _updateGpsInBackground();
       }
 
@@ -359,20 +366,11 @@ class CaptureController extends GetxController {
 
       _pendingSaveFutures.add(saveFuture);
 
-      // Jika sudah 4 foto, baru tunggu semua proses save selesai lalu simpan ke DB
-      if (currentPhotoIndex.value >= 4) {
-        await Future.wait(_pendingSaveFutures);
-        _pendingSaveFutures.clear();
-
-        await _saveCurrentTree();
-
-        // Auto next tree jika mode auto aktif
-        if (autoIdMode) {
-          startNewTree();
-          await startContinuousCapture();
-        } else {
-          isReady.value = false;
-        }
+      // Jika sudah foto terakhir, finalisasi DI BACKGROUND agar UI tidak freeze.
+      if (currentPhotoIndex.value >= totalPhotos) {
+        isReady.value = false;
+        isFinalizing.value = true;
+        unawaited(_finalizeAfterLastPhoto());
       }
     } catch (e) {
       Get.snackbar(
@@ -385,6 +383,38 @@ class CaptureController extends GetxController {
     } finally {
       isCapturing.value = false;
       _isTakingPicture = false;
+    }
+  }
+
+  Future<void> _finalizeAfterLastPhoto() async {
+    try {
+      // Tunggu semua save futures selesai dengan timeout.
+      // Native compression (flutter_image_compress) jauh lebih cepat,
+      // tapi tetap berikan buffer timeout yang cukup.
+      try {
+        await Future.wait(_pendingSaveFutures).timeout(
+          const Duration(seconds: 20),
+          onTimeout: () {
+            debugPrint('⚠️ Save timeout, proceeding with available photos');
+            return [];
+          },
+        );
+      } catch (e) {
+        debugPrint('⚠️ Error waiting for saves: $e');
+      }
+      _pendingSaveFutures.clear();
+
+      await _saveCurrentTree();
+
+      if (autoIdMode) {
+        startNewTree();
+        await startContinuousCapture();
+      }
+    } finally {
+      isFinalizing.value = false;
+      if (!autoIdMode) {
+        // Tetap di halaman, user bisa Next/Finish.
+      }
     }
   }
 
@@ -420,14 +450,14 @@ class CaptureController extends GetxController {
       photos: photos,
     );
 
-    await _treeController.addTree(tree);
+    await _treeController.addTree(tree, refresh: false);
     savedTreesCount.value++;
   }
 
   /// Mulai pohon baru
   void startNewTree() {
-    currentPhotos.assignAll([null, null, null, null]);
-    isProcessingPhotos.assignAll([false, false, false, false]);
+    currentPhotos.assignAll(List<String?>.filled(totalPhotos, null));
+    isProcessingPhotos.assignAll(List<bool>.filled(totalPhotos, false));
     currentPhotoIndex.value = 0;
     currentTreeNumber.value++;
 
@@ -439,6 +469,7 @@ class CaptureController extends GetxController {
     }
 
     isReady.value = false;
+    isFinalizing.value = false;
     currentLatitude = null;
     currentLongitude = null;
     _sessionLatitude = null;
@@ -450,7 +481,8 @@ class CaptureController extends GetxController {
     isReady.value = false;
     isCapturing.value = false;
     _isTakingPicture = false;
-    isProcessingPhotos.assignAll([false, false, false, false]);
+    isFinalizing.value = false;
+    isProcessingPhotos.assignAll(List<bool>.filled(totalPhotos, false));
   }
 
   /// Pre-fetch GPS position untuk mengurangi delay

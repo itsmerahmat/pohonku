@@ -1,106 +1,77 @@
 import 'dart:io';
-import 'dart:isolate';
+import 'dart:async';
+import 'dart:collection';
 
-import 'package:cross_file/cross_file.dart';
-import 'package:image/image.dart' as img;
+import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
+
+// Gunakan dynamic untuk XFile agar kompatibel dengan camera dan flutter_image_compress
+typedef XFileAny = dynamic;
 
 class PhotoService {
   PhotoService._internal();
   static final PhotoService _instance = PhotoService._internal();
   factory PhotoService() => _instance;
 
-  static const int _targetPortraitWidth = 3000;
-  static const int _targetPortraitHeight = 4000;
-  static const int _jpegQuality = 95;
+  // Quality 88 - balance antara ukuran dan kualitas
+  // Resolusi akan mengikuti camera (biasanya 12MP 4:3 dari sensor)
+  static const int _jpegQuality = 88;
 
-  static Future<String?> _processAndSavePhotoJpegOnBackgroundIsolate({
+  // Serial processing untuk stabilitas (hindari buffer overflow)
+  static const int _maxConcurrentProcessing = 1;
+  final _AsyncSemaphore _processingSemaphore = _AsyncSemaphore(
+    _maxConcurrentProcessing,
+  );
+
+  /// Proses dan simpan foto menggunakan native compression (flutter_image_compress)
+  /// Ini JAUH lebih cepat dari package:image karena menggunakan native code.
+  Future<String?> _processAndSavePhotoNative({
     required String sourcePath,
     required String savedPath,
   }) async {
-    // NOTE: Do NOT call any plugins (path_provider, etc.) inside isolate.
-    // Only pure Dart + file IO + package:image.
-    return Isolate.run(() {
-      try {
-        final bytes = File(sourcePath).readAsBytesSync();
-        final decoded = img.decodeImage(bytes);
-        if (decoded == null) {
-          File(sourcePath).copySync(savedPath);
-          return savedPath;
-        }
+    try {
+      // Gunakan flutter_image_compress yang native (Java/ObjC)
+      // Ini otomatis handle rotation dari EXIF dan jauh lebih cepat
+      // Resolusi dipertahankan dari camera (biasanya 12MP 4:3)
+      // minWidth/minHeight di-set tinggi agar TIDAK di-downscale
+      final XFile? result = await FlutterImageCompress.compressAndGetFile(
+        sourcePath,
+        savedPath,
+        quality: _jpegQuality,
+        minWidth: 9999,  // Pertahankan lebar asli
+        minHeight: 9999, // Pertahankan tinggi asli
+        // Biarkan library handle rotation otomatis
+        autoCorrectionAngle: true,
+        keepExif: true,
+        format: CompressFormat.jpeg,
+      );
 
-        final baked = img.bakeOrientation(decoded);
-
-        // Pastikan output selalu portrait.
-        final img.Image portraitSource = baked.width > baked.height
-            ? img.copyRotate(baked, angle: 90)
-            : baked;
-
-        const int targetWidth = _targetPortraitWidth;
-        const int targetHeight = _targetPortraitHeight;
-        const double targetAspectRatio = targetWidth / targetHeight; // 3:4
-        final double sourceAspectRatio =
-            portraitSource.width / portraitSource.height;
-
-        int cropWidth = portraitSource.width;
-        int cropHeight = portraitSource.height;
-        if (sourceAspectRatio > targetAspectRatio) {
-          cropWidth = (portraitSource.height * targetAspectRatio).round();
-        } else if (sourceAspectRatio < targetAspectRatio) {
-          cropHeight = (portraitSource.width / targetAspectRatio).round();
-        }
-
-        final int cropX = ((portraitSource.width - cropWidth) / 2)
-            .round()
-            .clamp(0, portraitSource.width - 1);
-        final int cropY = ((portraitSource.height - cropHeight) / 2)
-            .round()
-            .clamp(0, portraitSource.height - 1);
-        final int safeCropWidth = cropWidth.clamp(
-          1,
-          portraitSource.width - cropX,
-        );
-        final int safeCropHeight = cropHeight.clamp(
-          1,
-          portraitSource.height - cropY,
-        );
-
-        final cropped = img.copyCrop(
-          portraitSource,
-          x: cropX,
-          y: cropY,
-          width: safeCropWidth,
-          height: safeCropHeight,
-        );
-
-        final resized = img.copyResize(
-          cropped,
-          width: targetWidth,
-          height: targetHeight,
-          interpolation: img.Interpolation.linear,
-        );
-
-        final jpg = img.encodeJpg(resized, quality: _jpegQuality);
-        File(savedPath).writeAsBytesSync(jpg, flush: true);
-        return savedPath;
-      } catch (_) {
-        try {
-          File(sourcePath).copySync(savedPath);
-          return savedPath;
-        } catch (_) {
-          return null;
-        }
+      if (result != null && await File(result.path).exists()) {
+        return result.path;
       }
-    });
+
+      // Fallback: copy langsung jika compress gagal
+      return await _copyFileDirect(sourcePath, savedPath);
+    } catch (e) {
+      // Fallback: copy langsung
+      return await _copyFileDirect(sourcePath, savedPath);
+    }
   }
 
-  /// Menyimpan foto dari XFile ke direktori aplikasi dengan:
-  /// - Portrait only (rasio 3:4)
-  /// - Resolusi output 12MP (3000x4000)
-  /// - Format output JPEG
+  /// Copy file langsung tanpa processing (fallback)
+  Future<String?> _copyFileDirect(String sourcePath, String savedPath) async {
+    try {
+      await File(sourcePath).copy(savedPath);
+      return savedPath;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  /// Menyimpan foto ke direktori aplikasi
   Future<String?> _processAndSavePhotoJpeg(
-    XFile file,
+    String sourcePath,
     int urutan,
     String varietas,
     String blok,
@@ -120,21 +91,37 @@ class PhotoService {
 
     final savedPath = join(photosDir.path, fileName);
 
-    return _processAndSavePhotoJpegOnBackgroundIsolate(
-      sourcePath: file.path,
+    return _processAndSavePhotoNative(
+      sourcePath: sourcePath,
       savedPath: savedPath,
     );
   }
 
   /// Menyimpan foto dari XFile yang sudah ada (untuk continuous capture)
+  /// Menerima XFile dari camera package
   Future<String?> captureAndSaveFromFile({
-    required XFile file,
+    required XFileAny file,
     required int urutan,
     required String varietas,
     required String blok,
     required String nomorPohon,
   }) async {
-    return _processAndSavePhotoJpeg(file, urutan, varietas, blok, nomorPohon);
+    await _processingSemaphore.acquire();
+    try {
+      // Akses path dari XFile (works dengan camera atau flutter_image_compress XFile)
+      final String sourcePath = file.path;
+      return await _processAndSavePhotoJpeg(
+        sourcePath,
+        urutan,
+        varietas,
+        blok,
+        nomorPohon,
+      );
+    } catch (_) {
+      return null;
+    } finally {
+      _processingSemaphore.release();
+    }
   }
 
   /// Menghapus file foto dari storage jika ada.
@@ -143,5 +130,30 @@ class PhotoService {
     if (await file.exists()) {
       await file.delete();
     }
+  }
+}
+
+class _AsyncSemaphore {
+  _AsyncSemaphore(this._available);
+
+  int _available;
+  final Queue<Completer<void>> _waiters = Queue<Completer<void>>();
+
+  Future<void> acquire() {
+    if (_available > 0) {
+      _available--;
+      return Future.value();
+    }
+    final completer = Completer<void>();
+    _waiters.add(completer);
+    return completer.future;
+  }
+
+  void release() {
+    if (_waiters.isNotEmpty) {
+      _waiters.removeFirst().complete();
+      return;
+    }
+    _available++;
   }
 }
