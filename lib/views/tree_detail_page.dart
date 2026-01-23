@@ -1,13 +1,22 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
-import 'package:treedocs/controllers/group_controller.dart';
-import 'package:treedocs/controllers/tree_controller.dart';
-import 'package:treedocs/models/tree_model.dart';
 
+import '../controllers/group_controller.dart';
+import '../controllers/tree_controller.dart';
+import '../models/tree_model.dart';
+
+/// Halaman detail pohon.
+///
+/// Menampilkan informasi lengkap pohon termasuk:
+/// - Data identitas (varietas, blok, nomor)
+/// - Koordinat GPS
+/// - Metadata perangkat
+/// - Grid foto dengan fitur download
 class TreeDetailPage extends StatefulWidget {
   const TreeDetailPage({super.key});
 
@@ -30,7 +39,7 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
   Widget build(BuildContext context) {
     final formatter = DateFormat('dd MMM yyyy HH:mm');
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       appBar: AppBar(
@@ -44,7 +53,9 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
               final confirmed = await showDialog<bool>(
                 context: context,
                 builder: (_) => AlertDialog(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(16),
+                  ),
                   title: const Text('Hapus Data?'),
                   content: const Text(
                     'Apakah Anda yakin ingin menghapus data pohon ini? Tindakan ini tidak dapat dibatalkan.',
@@ -56,7 +67,9 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
                     ),
                     FilledButton(
                       onPressed: () => Navigator.pop(context, true),
-                      style: FilledButton.styleFrom(backgroundColor: Colors.red),
+                      style: FilledButton.styleFrom(
+                        backgroundColor: Colors.red,
+                      ),
                       child: const Text('Hapus'),
                     ),
                   ],
@@ -64,14 +77,14 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
               );
               if (confirmed == true) {
                 await controller.removeTree(tree);
-                
+
                 // Refresh home page
                 final groupController = Get.find<GroupController>();
                 groupController.loadGroups();
-                
+
                 // Return true to trigger tree list refresh
                 Get.back(result: true);
-                
+
                 Get.snackbar(
                   'Berhasil!',
                   'Data pohon berhasil dihapus',
@@ -83,7 +96,7 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
                 );
               }
             },
-          )
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -96,7 +109,10 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
               padding: const EdgeInsets.all(24),
               decoration: BoxDecoration(
                 gradient: LinearGradient(
-                  colors: [colorScheme.primary, colorScheme.primary.withValues(alpha: 0.8)],
+                  colors: [
+                    colorScheme.primary,
+                    colorScheme.primary.withValues(alpha: 0.8),
+                  ],
                   begin: Alignment.topLeft,
                   end: Alignment.bottomRight,
                 ),
@@ -112,7 +128,11 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
                           color: Colors.white.withValues(alpha: 0.2),
                           borderRadius: BorderRadius.circular(12),
                         ),
-                        child: const Icon(Icons.park, color: Colors.white, size: 32),
+                        child: const Icon(
+                          Icons.park,
+                          color: Colors.white,
+                          size: 32,
+                        ),
                       ),
                       const SizedBox(width: 16),
                       Expanded(
@@ -121,10 +141,11 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
                           children: [
                             Text(
                               tree.varietas,
-                              style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                                color: Colors.white,
-                                fontWeight: FontWeight.bold,
-                              ),
+                              style: Theme.of(context).textTheme.headlineMedium
+                                  ?.copyWith(
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                             ),
                             const SizedBox(height: 4),
                             Text(
@@ -205,7 +226,10 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
                       ),
                       const Spacer(),
                       Container(
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 6,
+                        ),
                         decoration: BoxDecoration(
                           color: colorScheme.primaryContainer,
                           borderRadius: BorderRadius.circular(20),
@@ -227,12 +251,13 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
                     shrinkWrap: true,
                     physics: const NeverScrollableScrollPhysics(),
                     itemCount: tree.photos.length,
-                    gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 12,
-                      childAspectRatio: 1,
-                    ),
+                    gridDelegate:
+                        const SliverGridDelegateWithFixedCrossAxisCount(
+                          crossAxisCount: 2,
+                          crossAxisSpacing: 12,
+                          mainAxisSpacing: 12,
+                          childAspectRatio: 1,
+                        ),
                     itemBuilder: (_, index) {
                       final photo = tree.photos[index];
                       return Hero(
@@ -241,7 +266,8 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
                           elevation: 2,
                           borderRadius: BorderRadius.circular(16),
                           child: InkWell(
-                            onTap: () => _showPhotoDialog(context, photo.pathFile),
+                            onTap: () =>
+                                _showPhotoDialog(context, photo.pathFile),
                             borderRadius: BorderRadius.circular(16),
                             child: Container(
                               decoration: BoxDecoration(
@@ -270,12 +296,15 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
                                             end: Alignment.bottomCenter,
                                             colors: [
                                               Colors.transparent,
-                                              Colors.black.withValues(alpha: 0.7),
+                                              Colors.black.withValues(
+                                                alpha: 0.7,
+                                              ),
                                             ],
                                           ),
                                         ),
                                         child: Column(
-                                          crossAxisAlignment: CrossAxisAlignment.start,
+                                          crossAxisAlignment:
+                                              CrossAxisAlignment.start,
                                           mainAxisSize: MainAxisSize.min,
                                           children: [
                                             Text(
@@ -302,8 +331,12 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
                                           vertical: 4,
                                         ),
                                         decoration: BoxDecoration(
-                                          color: Colors.black.withValues(alpha: 0.6),
-                                          borderRadius: BorderRadius.circular(12),
+                                          color: Colors.black.withValues(
+                                            alpha: 0.6,
+                                          ),
+                                          borderRadius: BorderRadius.circular(
+                                            12,
+                                          ),
                                         ),
                                         child: Text(
                                           'Foto ${photo.urutanFoto}',
@@ -322,12 +355,17 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
                                       child: Material(
                                         color: Colors.transparent,
                                         child: InkWell(
-                                          onTap: () => _downloadPhoto(photo.pathFile),
-                                          borderRadius: BorderRadius.circular(20),
+                                          onTap: () =>
+                                              _downloadPhoto(photo.pathFile),
+                                          borderRadius: BorderRadius.circular(
+                                            20,
+                                          ),
                                           child: Container(
                                             padding: const EdgeInsets.all(6),
                                             decoration: BoxDecoration(
-                                              color: Colors.black.withValues(alpha: 0.6),
+                                              color: Colors.black.withValues(
+                                                alpha: 0.6,
+                                              ),
                                               shape: BoxShape.circle,
                                             ),
                                             child: const Icon(
@@ -427,10 +465,7 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
           children: [
             ClipRRect(
               borderRadius: BorderRadius.circular(16),
-              child: Image.file(
-                File(photoPath),
-                fit: BoxFit.contain,
-              ),
+              child: Image.file(File(photoPath), fit: BoxFit.contain),
             ),
             const SizedBox(height: 16),
             Row(
@@ -438,7 +473,11 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
               children: [
                 IconButton(
                   onPressed: () => _downloadPhoto(photoPath),
-                  icon: const Icon(Icons.download, color: Colors.white, size: 28),
+                  icon: const Icon(
+                    Icons.download,
+                    color: Colors.white,
+                    size: 28,
+                  ),
                   style: IconButton.styleFrom(
                     backgroundColor: Colors.black.withValues(alpha: 0.5),
                   ),
@@ -462,13 +501,15 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
   }
 
   Future<void> _downloadPhoto(String photoPath) async {
+    HapticFeedback.lightImpact();
     try {
       // Copy file ke folder Downloads
       final fileName = path.basename(photoPath);
       final downloadPath = '/storage/emulated/0/Download/$fileName';
-      
+
       await File(photoPath).copy(downloadPath);
-      
+
+      HapticFeedback.mediumImpact();
       Get.snackbar(
         'Berhasil!',
         'Foto berhasil disimpan ke folder Download',

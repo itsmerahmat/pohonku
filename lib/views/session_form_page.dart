@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
-import 'package:get/get.dart';
+import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
-// import 'package:permission_handler/permission_handler.dart';
+import 'package:get/get.dart';
 
+/// Halaman form untuk memulai sesi pendataan baru.
+///
+/// User mengisi varietas, blok, dan jumlah foto per pohon
+/// sebelum memulai mode capture.
 class SessionFormPage extends StatefulWidget {
   const SessionFormPage({super.key});
 
@@ -87,7 +91,7 @@ class _SessionFormPageState extends State<SessionFormPage> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            'Sesi Pendataan Baru',
+                            'Sesi Pendataan',
                             style: TextStyle(
                               fontSize: 18,
                               fontWeight: FontWeight.bold,
@@ -96,7 +100,7 @@ class _SessionFormPageState extends State<SessionFormPage> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Isi data blok untuk mulai dokumentasi',
+                            'Varietas dan Blok akan digunakan untuk semua pohon dalam sesi ini',
                             style: TextStyle(
                               fontSize: 13,
                               color: colorScheme.onPrimaryContainer.withValues(
@@ -240,6 +244,7 @@ class _SessionFormPageState extends State<SessionFormPage> {
                           Switch(
                             value: _autoIdMode,
                             onChanged: (value) {
+                              HapticFeedback.selectionClick();
                               setState(() => _autoIdMode = value);
                             },
                           ),
@@ -301,50 +306,56 @@ class _SessionFormPageState extends State<SessionFormPage> {
                 ),
 
               // Info Box
-              Container(
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Colors.blue.shade50,
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(color: Colors.blue.shade200),
-                ),
-                child: Row(
-                  children: [
-                    Icon(Icons.info, color: Colors.blue.shade700, size: 24),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Varietas dan Blok akan digunakan untuk semua pohon dalam sesi ini',
-                        style: TextStyle(
-                          fontSize: 13,
-                          color: Colors.blue.shade900,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: 24),
+              // Container(
+              //   padding: const EdgeInsets.all(16),
+              //   decoration: BoxDecoration(
+              //     color: Colors.blue.shade50,
+              //     borderRadius: BorderRadius.circular(12),
+              //     border: Border.all(color: Colors.blue.shade200),
+              //   ),
+              //   child: Row(
+              //     children: [
+              //       Icon(Icons.info, color: Colors.blue.shade700, size: 24),
+              //       const SizedBox(width: 12),
+              //       Expanded(
+              //         child: Text(
+              //           'Varietas dan Blok akan digunakan untuk semua pohon dalam sesi ini',
+              //           style: TextStyle(
+              //             fontSize: 13,
+              //             color: Colors.blue.shade900,
+              //           ),
+              //         ),
+              //       ),
+              //     ],
+              //   ),
+              // ),
+              // const SizedBox(height: 24),
 
-              // Buttons
-              SizedBox(
-                width: double.infinity,
-                child: FilledButton.icon(
-                  onPressed: _handleStart,
-                  style: FilledButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(vertical: 14),
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(12),
-                    ),
-                  ),
-                  icon: const Icon(Icons.camera_alt),
-                  label: const Text(
-                    'Mulai Dokumentasi',
-                    style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-                  ),
-                ),
-              ),
+              const SizedBox(height: 96),
             ],
+          ),
+        ),
+      ),
+      bottomNavigationBar: SafeArea(
+        minimum: const EdgeInsets.fromLTRB(16, 8, 16, 16),
+        child: SizedBox(
+          width: double.infinity,
+          child: FilledButton.icon(
+            onPressed: () {
+              HapticFeedback.mediumImpact();
+              _handleStart();
+            },
+            style: FilledButton.styleFrom(
+              padding: const EdgeInsets.symmetric(vertical: 16),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(12),
+              ),
+            ),
+            icon: const Icon(Icons.camera_alt),
+            label: const Text(
+              'Mulai Dokumentasi',
+              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+            ),
           ),
         ),
       ),

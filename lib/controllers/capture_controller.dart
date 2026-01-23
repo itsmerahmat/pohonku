@@ -1,22 +1,39 @@
+import 'dart:async';
+
 import 'package:camera/camera.dart';
 import 'package:device_info_plus/device_info_plus.dart';
-import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
-import 'package:treedocs/controllers/tree_controller.dart';
-import 'package:treedocs/models/photo_model.dart';
-import 'package:treedocs/models/tree_model.dart';
-import 'package:treedocs/services/exif_service.dart';
-import 'package:treedocs/services/photo_service.dart';
 
+import '../models/photo_model.dart';
+import '../models/tree_model.dart';
+import '../services/exif_service.dart';
+import '../services/photo_service.dart';
+import 'tree_controller.dart';
+
+/// Controller untuk mode capture foto kontinyu.
+///
+/// Menangani:
+/// - Inisialisasi dan kontrol kamera
+/// - Capture foto dengan GPS
+/// - Penyimpanan otomatis ke database
+/// - Mode ID otomatis untuk dokumentasi cepat
 class CaptureController extends GetxController {
+  /// Varietas pohon untuk sesi ini.
   final String varietas;
+
+  /// Blok lokasi untuk sesi ini.
   final String blok;
+
+  /// Mode ID otomatis (increment otomatis).
   final bool autoIdMode;
+
+  /// Total foto per pohon (minimal 4, harus genap).
   final int totalPhotos;
 
+  /// Normalisasi jumlah foto (minimal 4, harus genap).
   static int _normalizePhotoCount(int value) {
     if (value < 4) return 4;
     if (value.isOdd) return value + 1;
@@ -33,10 +50,12 @@ class CaptureController extends GetxController {
     isProcessingPhotos.assignAll(List<bool>.filled(totalPhotos, false));
   }
 
+  // Services
   final PhotoService _photoService = PhotoService();
   final ExifService _exifService = ExifService();
   final TreeController _treeController = Get.find<TreeController>();
 
+  // State observables
   final RxList<String?> currentPhotos = <String?>[].obs;
   final RxList<bool> isProcessingPhotos = <bool>[].obs;
   final RxInt currentPhotoIndex = 0.obs;
@@ -44,26 +63,32 @@ class CaptureController extends GetxController {
   final RxInt currentTreeNumber = 1.obs;
   final RxInt savedTreesCount = 0.obs;
   final RxBool isCapturing = false.obs;
-  final RxBool isReady = false.obs; // Ready untuk capture
+  final RxBool isReady = false.obs;
   final RxBool isFinalizing = false.obs;
-  // final RxBool isVibrationEnabled = true.obs;
 
+  // Camera
   CameraController? cameraController;
   final Rx<CameraDescription?> selectedCamera = Rx<CameraDescription?>(null);
   final RxBool isCameraInitialized = false.obs;
 
-  // Store GPS coordinates
+  // GPS coordinates
   double? currentLatitude;
   double? currentLongitude;
-
-  // Best-effort GPS for the current tree/session (used for DB write).
   double? _sessionLatitude;
   double? _sessionLongitude;
 
+  // Cache
   String? _deviceNameCache;
-
   bool _isTakingPicture = false;
   final List<Future<String?>> _pendingSaveFutures = [];
+
+  @override
+  void onInit() {
+    super.onInit();
+    if (autoIdMode) {
+      _syncAutoTreeNumber();
+    }
+  }
 
   Future<String> _getDeviceName() async {
     final cached = _deviceNameCache;
@@ -85,6 +110,16 @@ class CaptureController extends GetxController {
   void _setSessionGpsIfNull(double lat, double lng) {
     _sessionLatitude ??= lat;
     _sessionLongitude ??= lng;
+  }
+
+  Future<void> _syncAutoTreeNumber() async {
+    final lastNumber = await _treeController.getMaxTreeNumber(varietas, blok);
+    if (lastNumber != null) {
+      currentTreeNumber.value = lastNumber + 1;
+    } else {
+      currentTreeNumber.value = 1;
+    }
+    currentTreeId.value = currentTreeNumber.value.toString().padLeft(3, '0');
   }
 
   /// Pastikan foto memiliki GPS di EXIF.
@@ -281,14 +316,14 @@ class CaptureController extends GetxController {
     isReady.value = true;
     currentPhotoIndex.value = 0;
 
-    Get.snackbar(
-      'Siap Capture!',
-      'Tekan tombol shutter atau remote bluetooth untuk mengambil foto ($totalPhotos foto)',
-      snackPosition: SnackPosition.TOP,
-      backgroundColor: Colors.blue,
-      colorText: Colors.white,
-      duration: const Duration(seconds: 3),
-    );
+    // Get.snackbar(
+    //   'Siap Capture!',
+    //   'Tekan tombol shutter atau remote bluetooth untuk mengambil foto ($totalPhotos foto)',
+    //   snackPosition: SnackPosition.TOP,
+    //   backgroundColor: Colors.blue,
+    //   colorText: Colors.white,
+    //   duration: const Duration(seconds: 3),
+    // );
   }
 
   /// Capture single photo (dipanggil saat tombol volume/remote ditekan)

@@ -1,12 +1,18 @@
 import 'dart:io';
+
 import 'package:archive/archive_io.dart';
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 import 'package:path/path.dart' as p;
 import 'package:path_provider/path_provider.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'package:treedocs/models/tree_model.dart';
-import 'package:intl/intl.dart';
 
+import '../models/tree_model.dart';
+
+/// Service untuk mengexport foto-foto pohon.
+///
+/// Mendukung export dalam format ZIP atau copy langsung ke folder.
+/// File akan disimpan ke folder Download perangkat.
 class ExportService {
   /// Export semua foto pohon dalam bentuk ZIP
   ///

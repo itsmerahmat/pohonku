@@ -1,17 +1,29 @@
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:get/get.dart';
-import 'package:treedocs/models/tree_model.dart';
-import 'package:treedocs/services/db_service.dart';
-import 'package:treedocs/services/location_service.dart';
-import 'package:treedocs/services/photo_service.dart';
 
+import '../models/tree_model.dart';
+import '../services/db_service.dart';
+import '../services/location_service.dart';
+import '../services/photo_service.dart';
+
+/// Controller utama untuk mengelola data pohon.
+///
+/// Menangani operasi CRUD pohon termasuk:
+/// - Load daftar pohon dari database
+/// - Tambah, update, dan hapus pohon
+/// - Mengambil lokasi GPS dan info perangkat
 class TreeController extends GetxController {
   final DatabaseService _dbService = DatabaseService();
   final PhotoService _photoService = PhotoService();
   final LocationService _locationService = LocationService();
 
+  /// Daftar pohon yang ditampilkan.
   final RxList<TreeModel> trees = <TreeModel>[].obs;
-  final RxBool loading = true.obs; // Set true sebagai initial state
+
+  /// Status loading data.
+  final RxBool loading = true.obs;
+
+  /// Keyword pencarian aktif.
   final RxString searchKeyword = ''.obs;
 
   /// Mengambil semua entri pohon dari database berdasarkan keyword pencarian.
@@ -40,6 +52,11 @@ class TreeController extends GetxController {
   /// Mengambil data pohon berdasarkan ID.
   Future<TreeModel?> getTreeById(int id) async {
     return await _dbService.getTreeById(id);
+  }
+
+  /// Mengambil nomor pohon terbesar (numeric) berdasarkan varietas dan blok.
+  Future<int?> getMaxTreeNumber(String varietas, String blok) async {
+    return _dbService.getMaxTreeNumber(varietas, blok);
   }
 
   /// Menghapus data pohon dan semua file foto terkait.

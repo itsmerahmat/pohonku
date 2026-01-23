@@ -1,12 +1,20 @@
 import 'package:get/get.dart';
-import 'package:treedocs/models/photo_model.dart';
-import 'package:treedocs/models/tree_model.dart';
 
+import '../models/photo_model.dart';
+import '../models/tree_model.dart';
+
+/// Controller untuk form input data pohon (legacy).
+///
+/// Catatan: Form ini sudah tidak digunakan untuk capture foto.
+/// Gunakan CaptureController untuk mode capture utama.
 class TreeFormController extends GetxController {
+  /// Path foto untuk setiap slot (4 slot default).
   final RxList<String?> photoPaths = <String?>[null, null, null, null].obs;
+
+  /// Status penyimpanan data.
   final RxBool saving = false.obs;
 
-  /// Menyimpan state apakah sedang mode edit serta data lama.
+  /// Data pohon yang sedang diedit (null jika mode tambah baru).
   TreeModel? existing;
 
   /// Mengambil foto untuk slot tertentu lalu menyimpannya ke storage lokal.
@@ -60,11 +68,9 @@ class TreeFormController extends GetxController {
     for (int i = 0; i < photoPaths.length; i++) {
       final path = photoPaths[i];
       if (path != null) {
-        photos.add(PhotoModel(
-          treeId: treeId,
-          urutanFoto: i + 1,
-          pathFile: path,
-        ));
+        photos.add(
+          PhotoModel(treeId: treeId, urutanFoto: i + 1, pathFile: path),
+        );
       }
     }
     return photos;

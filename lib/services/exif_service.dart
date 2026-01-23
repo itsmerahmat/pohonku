@@ -2,6 +2,10 @@ import 'dart:io';
 
 import 'package:native_exif/native_exif.dart';
 
+/// Service untuk membaca dan menulis metadata EXIF foto.
+///
+/// Digunakan untuk menyimpan koordinat GPS ke dalam file foto
+/// sehingga lokasi tersimpan langsung di metadata gambar.
 class ExifService {
   ExifService._internal();
   static final ExifService _instance = ExifService._internal();
@@ -15,7 +19,7 @@ class ExifService {
 
       // Open EXIF reader
       final exif = await Exif.fromPath(photoPath);
-      
+
       // Get GPS coordinates using native_exif getLatLong method
       final latLong = await exif.getLatLong();
 
@@ -24,24 +28,25 @@ class ExifService {
 
       if (latLong == null) return null;
 
-      return {
-        'latitude': latLong.latitude,
-        'longitude': latLong.longitude,
-      };
+      return {'latitude': latLong.latitude, 'longitude': latLong.longitude};
     } catch (e) {
       return null;
     }
   }
 
   /// Write GPS coordinates to photo EXIF data
-  Future<bool> writeGpsToPhoto(String photoPath, double latitude, double longitude) async {
+  Future<bool> writeGpsToPhoto(
+    String photoPath,
+    double latitude,
+    double longitude,
+  ) async {
     try {
       final file = File(photoPath);
       if (!await file.exists()) return false;
 
       // Open EXIF writer
       final exif = await Exif.fromPath(photoPath);
-      
+
       // Write GPS coordinates
       await exif.writeAttributes({
         'GPSLatitude': latitude.abs().toString(),

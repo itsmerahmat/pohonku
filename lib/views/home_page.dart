@@ -1,14 +1,20 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
-import 'package:treedocs/controllers/group_controller.dart';
-import 'package:treedocs/controllers/tree_controller.dart';
-import 'package:treedocs/services/db_service.dart';
-import 'package:treedocs/services/export_service.dart';
 
+import '../controllers/group_controller.dart';
+import '../controllers/tree_controller.dart';
+import '../services/db_service.dart';
+import '../services/export_service.dart';
+
+/// Halaman utama aplikasi.
+///
+/// Menampilkan daftar grup pohon berdasarkan varietas dan blok,
+/// dengan fitur pencarian dan export foto.
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -25,10 +31,10 @@ class _HomePageState extends State<HomePage> {
     super.initState();
     // Init TreeController untuk keperluan lain
     Get.put(TreeController(), permanent: true);
-    
+
     // Init GroupController untuk home page
     controller = Get.put(GroupController(), permanent: true);
-    
+
     // Load data SETELAH frame pertama selesai render
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
@@ -46,7 +52,7 @@ class _HomePageState extends State<HomePage> {
   void _onSearchChanged(String value) {
     // Cancel timer sebelumnya jika ada
     if (_debounce?.isActive ?? false) _debounce!.cancel();
-    
+
     // Set timer baru dengan delay 500ms
     _debounce = Timer(const Duration(milliseconds: 500), () {
       controller.searchKeyword.value = value;
@@ -59,7 +65,9 @@ class _HomePageState extends State<HomePage> {
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Export Semua Foto'),
-        content: const Text('Export semua foto pohon dalam bentuk file ZIP?\n\nFile akan disimpan ke folder Download.'),
+        content: const Text(
+          'Export semua foto pohon dalam bentuk file ZIP?\n\nFile akan disimpan ke folder Download.',
+        ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -101,7 +109,7 @@ class _HomePageState extends State<HomePage> {
     try {
       final dbService = DatabaseService();
       final trees = await dbService.getTrees();
-      
+
       if (trees.isEmpty) {
         Get.back();
         Get.snackbar(
@@ -152,7 +160,7 @@ class _HomePageState extends State<HomePage> {
   @override
   Widget build(BuildContext context) {
     final colorScheme = Theme.of(context).colorScheme;
-    
+
     return Scaffold(
       backgroundColor: Colors.grey[50],
       body: CustomScrollView(
@@ -226,12 +234,18 @@ class _HomePageState extends State<HomePage> {
                             //   tooltip: 'Lihat Peta',
                             // ),
                             IconButton(
-                              icon: const Icon(Icons.download, color: Colors.white),
+                              icon: const Icon(
+                                Icons.download,
+                                color: Colors.white,
+                              ),
                               onPressed: _showExportDialog,
                               tooltip: 'Export Semua Foto',
                             ),
                             IconButton(
-                              icon: const Icon(Icons.refresh, color: Colors.white),
+                              icon: const Icon(
+                                Icons.refresh,
+                                color: Colors.white,
+                              ),
                               onPressed: controller.loadGroups,
                               tooltip: 'Segarkan',
                             ),
@@ -244,7 +258,7 @@ class _HomePageState extends State<HomePage> {
               ),
             ),
           ),
-          
+
           // Search Bar
           SliverToBoxAdapter(
             child: Padding(
@@ -267,14 +281,17 @@ class _HomePageState extends State<HomePage> {
                     prefixIcon: Icon(Icons.search),
                     border: InputBorder.none,
                     filled: false,
-                    contentPadding: EdgeInsets.symmetric(horizontal: 16, vertical: 16),
+                    contentPadding: EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 16,
+                    ),
                   ),
                   onChanged: _onSearchChanged,
                 ),
               ),
             ),
           ),
-          
+
           // Stats Card
           SliverToBoxAdapter(
             child: Obx(() {
@@ -295,7 +312,9 @@ class _HomePageState extends State<HomePage> {
                           gradient: LinearGradient(
                             colors: [
                               colorScheme.primaryContainer,
-                              colorScheme.primaryContainer.withValues(alpha: 0.7),
+                              colorScheme.primaryContainer.withValues(
+                                alpha: 0.7,
+                              ),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(12),
@@ -319,7 +338,8 @@ class _HomePageState extends State<HomePage> {
                             Text(
                               'Pohon',
                               style: TextStyle(
-                                color: colorScheme.onPrimaryContainer.withValues(alpha: 0.7),
+                                color: colorScheme.onPrimaryContainer
+                                    .withValues(alpha: 0.7),
                                 fontSize: 11,
                               ),
                             ),
@@ -335,7 +355,9 @@ class _HomePageState extends State<HomePage> {
                           gradient: LinearGradient(
                             colors: [
                               colorScheme.secondaryContainer,
-                              colorScheme.secondaryContainer.withValues(alpha: 0.7),
+                              colorScheme.secondaryContainer.withValues(
+                                alpha: 0.7,
+                              ),
                             ],
                           ),
                           borderRadius: BorderRadius.circular(12),
@@ -359,7 +381,8 @@ class _HomePageState extends State<HomePage> {
                             Text(
                               'Grup',
                               style: TextStyle(
-                                color: colorScheme.onSecondaryContainer.withValues(alpha: 0.7),
+                                color: colorScheme.onSecondaryContainer
+                                    .withValues(alpha: 0.7),
                                 fontSize: 11,
                               ),
                             ),
@@ -372,32 +395,29 @@ class _HomePageState extends State<HomePage> {
               );
             }),
           ),
-          
+
           const SliverToBoxAdapter(child: SizedBox(height: 12)),
-          
+
           // List Content - Group by Varietas & Blok
           Obx(() {
             if (controller.loading.value) {
               return SliverPadding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
                 sliver: SliverList(
-                  delegate: SliverChildBuilderDelegate(
-                    (_, index) {
-                      return Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Skeletonizer(
-                          child: Container(
-                            height: 100,
-                            decoration: BoxDecoration(
-                              color: Colors.white,
-                              borderRadius: BorderRadius.circular(16),
-                            ),
+                  delegate: SliverChildBuilderDelegate((_, index) {
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: Skeletonizer(
+                        child: Container(
+                          height: 100,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
                           ),
                         ),
-                      );
-                    },
-                    childCount: 5,
-                  ),
+                      ),
+                    );
+                  }, childCount: 5),
                 ),
               );
             }
@@ -405,43 +425,54 @@ class _HomePageState extends State<HomePage> {
             if (controller.groups.isEmpty) {
               return SliverFillRemaining(
                 child: Center(
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Container(
-                        padding: const EdgeInsets.all(24),
-                        decoration: BoxDecoration(
-                          color: Colors.grey[100],
-                          shape: BoxShape.circle,
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: const Duration(milliseconds: 600),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, child) {
+                      return Opacity(
+                        opacity: value,
+                        child: Transform.translate(
+                          offset: Offset(0, 20 * (1 - value)),
+                          child: child,
                         ),
-                        child: Icon(
-                          Icons.park_outlined,
-                          size: 64,
-                          color: Colors.grey[400],
+                      );
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.all(32),
+                          decoration: BoxDecoration(
+                            color: Colors.grey[100],
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            Icons.eco_outlined,
+                            size: 72,
+                            color: Colors.grey[400],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 16),
-                      Text(
-                        'Belum Ada Data Pohon',
-                        style: TextStyle(
-                          fontSize: 18,
-                          fontWeight: FontWeight.bold,
-                          color: Colors.grey[700],
+                        const SizedBox(height: 24),
+                        Text(
+                          'Belum Ada Data Pohon',
+                          style: TextStyle(
+                            fontSize: 20,
+                            fontWeight: FontWeight.bold,
+                            color: Colors.grey[700],
+                          ),
                         ),
-                      ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Mulai dokumentasi pohon dengan\nmenambahkan data pohon pertama',
-                        textAlign: TextAlign.center,
-                        style: TextStyle(color: Colors.grey[600]),
-                      ),
-                      const SizedBox(height: 24),
-                      ElevatedButton.icon(
-                        onPressed: () => Get.toNamed('/session'),
-                        icon: const Icon(Icons.add),
-                        label: const Text('Mulai Sesi Baru'),
-                      ),
-                    ],
+                        const SizedBox(height: 8),
+                        Text(
+                          'Mulai dokumentasi pohon dengan\nmenambahkan data pohon pertama',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: Colors.grey[600],
+                            height: 1.5,
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ),
               );
@@ -450,37 +481,54 @@ class _HomePageState extends State<HomePage> {
             return SliverPadding(
               padding: const EdgeInsets.fromLTRB(16, 0, 16, 100),
               sliver: SliverList(
-                delegate: SliverChildBuilderDelegate(
-                  (_, index) {
-                    final group = controller.groups[index];
-                    final varietas = group['varietas'] as String;
-                    final blok = group['blok'] as String;
-                    final count = group['count'] as int;
-                    final lastUpdated = group['last_updated'] as String;
+                delegate: SliverChildBuilderDelegate((_, index) {
+                  final group = controller.groups[index];
+                  final varietas = group['varietas'] as String;
+                  final blok = group['blok'] as String;
+                  final count = group['count'] as int;
+                  final lastUpdated = group['last_updated'] as String;
 
-                    return Padding(
+                  return TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.0, end: 1.0),
+                    duration: Duration(milliseconds: 300 + (index * 50)),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, child) {
+                      return Opacity(
+                        opacity: value,
+                        child: Transform.translate(
+                          offset: Offset(0, 20 * (1 - value)),
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Padding(
                       padding: const EdgeInsets.only(bottom: 12),
                       child: _GroupCard(
                         varietas: varietas,
                         blok: blok,
                         count: count,
                         lastUpdated: lastUpdated,
-                        onTap: () => Get.toNamed('/trees', arguments: {
-                          'varietas': varietas,
-                          'blok': blok,
-                        }),
+                        onTap: () {
+                          HapticFeedback.selectionClick();
+                          Get.toNamed(
+                            '/trees',
+                            arguments: {'varietas': varietas, 'blok': blok},
+                          );
+                        },
                       ),
-                    );
-                  },
-                  childCount: controller.groups.length,
-                ),
+                    ),
+                  );
+                }, childCount: controller.groups.length),
               ),
             );
           }),
         ],
       ),
       floatingActionButton: FloatingActionButton.extended(
-        onPressed: () => Get.toNamed('/session'),
+        onPressed: () {
+          HapticFeedback.mediumImpact();
+          Get.toNamed('/session');
+        },
         icon: const Icon(Icons.add),
         label: const Text('Sesi Baru'),
       ),
@@ -540,11 +588,7 @@ class _GroupCard extends StatelessWidget {
                   ),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: const Icon(
-                  Icons.folder,
-                  color: Colors.white,
-                  size: 28,
-                ),
+                child: const Icon(Icons.folder, color: Colors.white, size: 28),
               ),
               const SizedBox(width: 16),
               Expanded(
@@ -600,18 +644,12 @@ class _GroupCard extends StatelessWidget {
                     const SizedBox(height: 4),
                     Text(
                       formattedDate,
-                      style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey[500],
-                      ),
+                      style: TextStyle(fontSize: 12, color: Colors.grey[500]),
                     ),
                   ],
                 ),
               ),
-              Icon(
-                Icons.chevron_right,
-                color: Colors.grey[400],
-              ),
+              Icon(Icons.chevron_right, color: Colors.grey[400]),
             ],
           ),
         ),

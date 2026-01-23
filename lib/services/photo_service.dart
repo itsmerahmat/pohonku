@@ -1,24 +1,27 @@
-import 'dart:io';
 import 'dart:async';
 import 'dart:collection';
+import 'dart:io';
 
 import 'package:flutter_image_compress/flutter_image_compress.dart';
 import 'package:path/path.dart';
 import 'package:path_provider/path_provider.dart';
 
-// Gunakan dynamic untuk XFile agar kompatibel dengan camera dan flutter_image_compress
+/// Type alias untuk XFile agar kompatibel dengan berbagai package.
 typedef XFileAny = dynamic;
 
+/// Service untuk mengelola foto pohon.
+///
+/// Menangani capture, kompresi, dan penyimpanan foto ke storage lokal.
+/// Menggunakan native compression untuk performa optimal.
 class PhotoService {
   PhotoService._internal();
   static final PhotoService _instance = PhotoService._internal();
   factory PhotoService() => _instance;
 
-  // Quality 88 - balance antara ukuran dan kualitas
-  // Resolusi akan mengikuti camera (biasanya 12MP 4:3 dari sensor)
+  /// Kualitas JPEG - balance antara ukuran dan kualitas.
   static const int _jpegQuality = 88;
 
-  // Serial processing untuk stabilitas (hindari buffer overflow)
+  /// Serial processing untuk stabilitas (hindari buffer overflow).
   static const int _maxConcurrentProcessing = 1;
   final _AsyncSemaphore _processingSemaphore = _AsyncSemaphore(
     _maxConcurrentProcessing,
@@ -39,7 +42,7 @@ class PhotoService {
         sourcePath,
         savedPath,
         quality: _jpegQuality,
-        minWidth: 9999,  // Pertahankan lebar asli
+        minWidth: 9999, // Pertahankan lebar asli
         minHeight: 9999, // Pertahankan tinggi asli
         // Biarkan library handle rotation otomatis
         autoCorrectionAngle: true,

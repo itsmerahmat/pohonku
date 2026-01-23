@@ -1,8 +1,13 @@
 import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
-import 'package:treedocs/models/photo_model.dart';
-import 'package:treedocs/models/tree_model.dart';
 
+import '../models/photo_model.dart';
+import '../models/tree_model.dart';
+
+/// Service untuk mengelola database SQLite lokal.
+///
+/// Menggunakan singleton pattern untuk memastikan hanya ada
+/// satu koneksi database di seluruh aplikasi.
 class DatabaseService {
   DatabaseService._internal();
   static final DatabaseService _instance = DatabaseService._internal();
@@ -54,10 +59,7 @@ class DatabaseService {
     return db.transaction<int>((txn) async {
       final treeId = await txn.insert('trees', tree.toMap());
       for (final photo in tree.photos) {
-        await txn.insert('photos', {
-          ...photo.toMap(),
-          'tree_id': treeId,
-        });
+        await txn.insert('photos', {...photo.toMap(), 'tree_id': treeId});
       }
       return treeId;
     });
@@ -68,13 +70,15 @@ class DatabaseService {
     if (tree.id == null) return;
     final db = await database;
     await db.transaction((txn) async {
-      await txn.update('trees', tree.toMap(), where: 'id = ?', whereArgs: [tree.id]);
+      await txn.update(
+        'trees',
+        tree.toMap(),
+        where: 'id = ?',
+        whereArgs: [tree.id],
+      );
       await txn.delete('photos', where: 'tree_id = ?', whereArgs: [tree.id]);
       for (final photo in tree.photos) {
-        await txn.insert('photos', {
-          ...photo.toMap(),
-          'tree_id': tree.id,
-        });
+        await txn.insert('photos', {...photo.toMap(), 'tree_id': tree.id});
       }
     });
   }
@@ -99,12 +103,12 @@ class DatabaseService {
       'SELECT * FROM trees $whereClause ORDER BY datetime(tanggal_pengambilan) DESC',
       args,
     );
-    
+
     if (treeMaps.isEmpty) return [];
-    
+
     // Ambil semua tree IDs
     final treeIds = treeMaps.map((t) => t['id']).toList();
-    
+
     // Ambil semua photos dalam 1 query dengan WHERE IN
     final photoMaps = await db.query(
       'photos',
@@ -112,7 +116,7 @@ class DatabaseService {
       whereArgs: treeIds,
       orderBy: 'tree_id ASC, urutan_foto ASC',
     );
-    
+
     // Group photos by tree_id
     final Map<int, List<PhotoModel>> photosByTreeId = {};
     for (final photoMap in photoMaps) {
@@ -120,7 +124,7 @@ class DatabaseService {
       photosByTreeId.putIfAbsent(treeId, () => []);
       photosByTreeId[treeId]!.add(PhotoModel.fromMap(photoMap));
     }
-    
+
     // Build results dengan photos yang sudah di-group
     final List<TreeModel> results = [];
     for (final map in treeMaps) {
@@ -134,9 +138,19 @@ class DatabaseService {
   /// Mengambil 1 pohon berdasarkan id untuk detail atau edit.
   Future<TreeModel?> getTreeById(int id) async {
     final db = await database;
-    final maps = await db.query('trees', where: 'id = ?', whereArgs: [id], limit: 1);
+    final maps = await db.query(
+      'trees',
+      where: 'id = ?',
+      whereArgs: [id],
+      limit: 1,
+    );
     if (maps.isEmpty) return null;
-    final photoMaps = await db.query('photos', where: 'tree_id = ?', whereArgs: [id], orderBy: 'urutan_foto ASC');
+    final photoMaps = await db.query(
+      'photos',
+      where: 'tree_id = ?',
+      whereArgs: [id],
+      orderBy: 'urutan_foto ASC',
+    );
     return TreeModel.fromMap(
       maps.first,
       photoMaps.map((p) => PhotoModel.fromMap(p)).toList(),
@@ -144,7 +158,9 @@ class DatabaseService {
   }
 
   /// Mengambil group varietas & blok dengan jumlah pohon
-  Future<List<Map<String, dynamic>>> getVarietasBlokGroups({String? query}) async {
+  Future<List<Map<String, dynamic>>> getVarietasBlokGroups({
+    String? query,
+  }) async {
     final db = await database;
     final whereClause = (query != null && query.isNotEmpty)
         ? 'WHERE varietas LIKE ? OR blok LIKE ?'
@@ -152,7 +168,7 @@ class DatabaseService {
     final args = (query != null && query.isNotEmpty)
         ? ['%$query%', '%$query%']
         : null;
-    
+
     final result = await db.rawQuery('''
       SELECT 
         varietas,
@@ -164,22 +180,25 @@ class DatabaseService {
       GROUP BY varietas, blok
       ORDER BY datetime(last_updated) DESC
     ''', args);
-    
+
     return result;
   }
 
   /// Mengambil pohon berdasarkan varietas dan blok
-  Future<List<TreeModel>> getTreesByVarietasBlok(String varietas, String blok) async {
+  Future<List<TreeModel>> getTreesByVarietasBlok(
+    String varietas,
+    String blok,
+  ) async {
     final db = await database;
     final treeMaps = await db.query(
       'trees',
       where: 'varietas = ? AND blok = ?',
       whereArgs: [varietas, blok],
-      orderBy: 'datetime(tanggal_pengambilan) DESC',
+      orderBy: 'datetime(tanggal_pengambilan) ASC',
     );
-    
+
     if (treeMaps.isEmpty) return [];
-    
+
     final treeIds = treeMaps.map((t) => t['id']).toList();
     final photoMaps = await db.query(
       'photos',
@@ -187,14 +206,14 @@ class DatabaseService {
       whereArgs: treeIds,
       orderBy: 'tree_id ASC, urutan_foto ASC',
     );
-    
+
     final Map<int, List<PhotoModel>> photosByTreeId = {};
     for (final photoMap in photoMaps) {
       final treeId = photoMap['tree_id'] as int;
       photosByTreeId.putIfAbsent(treeId, () => []);
       photosByTreeId[treeId]!.add(PhotoModel.fromMap(photoMap));
     }
-    
+
     final List<TreeModel> results = [];
     for (final map in treeMaps) {
       final treeId = map['id'] as int;
@@ -202,5 +221,24 @@ class DatabaseService {
       results.add(TreeModel.fromMap(map, photos));
     }
     return results;
+  }
+
+  /// Mengambil nomor pohon terbesar (numeric) berdasarkan varietas dan blok.
+  Future<int?> getMaxTreeNumber(String varietas, String blok) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      '''
+      SELECT nomor_pohon
+      FROM trees
+      WHERE varietas = ? AND blok = ?
+      ORDER BY CAST(nomor_pohon AS INTEGER) DESC, id DESC
+      LIMIT 1
+      ''',
+      [varietas, blok],
+    );
+
+    if (result.isEmpty) return null;
+    final value = result.first['nomor_pohon']?.toString();
+    return int.tryParse(value ?? '');
   }
 }

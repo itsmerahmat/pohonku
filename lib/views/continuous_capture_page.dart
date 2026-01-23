@@ -4,10 +4,17 @@ import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import 'package:treedocs/controllers/capture_controller.dart';
 
+import '../controllers/capture_controller.dart';
 import '../controllers/group_controller.dart';
 
+/// Halaman capture foto kontinyu.
+///
+/// Mendukung:
+/// - Preview kamera realtime
+/// - Capture manual via tombol
+/// - Capture via bluetooth remote (volume buttons)
+/// - Mode ID otomatis
 class ContinuousCapturePage extends StatefulWidget {
   const ContinuousCapturePage({super.key});
 
@@ -253,55 +260,6 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                 ),
               // const SizedBox(height: 12),
 
-              // // Pengaturan getaran
-              // Container(
-              //   padding: const EdgeInsets.all(16),
-              //   decoration: BoxDecoration(
-              //     color: Colors.white,
-              //     borderRadius: BorderRadius.circular(16),
-              //     boxShadow: [
-              //       BoxShadow(
-              //         color: Colors.black.withValues(alpha: 0.05),
-              //         blurRadius: 10,
-              //         offset: const Offset(0, 2),
-              //       ),
-              //     ],
-              //   ),
-              //   child: Row(
-              //     children: [
-              //       const Icon(Icons.vibration, color: Colors.blue),
-              //       const SizedBox(width: 12),
-              //       const Expanded(
-              //         child: Column(
-              //           crossAxisAlignment: CrossAxisAlignment.start,
-              //           children: [
-              //             Text(
-              //               'Getaran saat foto',
-              //               style: TextStyle(
-              //                 fontSize: 16,
-              //                 fontWeight: FontWeight.bold,
-              //               ),
-              //             ),
-              //             SizedBox(height: 4),
-              //             Text(
-              //               'Aktifkan atau nonaktifkan getaran ketika foto berhasil diambil',
-              //               style: TextStyle(
-              //                 fontSize: 12,
-              //                 color: Colors.grey,
-              //               ),
-              //             ),
-              //           ],
-              //         ),
-              //       ),
-              //       Obx(() => Switch(
-              //             value: controller.isVibrationEnabled.value,
-              //             onChanged: (value) {
-              //               controller.isVibrationEnabled.value = value;
-              //             },
-              //           )),
-              //     ],
-              //   ),
-              // ),
               const SizedBox(height: 20),
 
               // Camera Preview (jika ready mode)
@@ -310,9 +268,9 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                   return const SizedBox.shrink();
                 }
 
-                final screenHeight = MediaQuery.of(context).size.height;
+                final screenWidth = MediaQuery.of(context).size.width;
                 final cameraHeight =
-                    screenHeight * 0.6; // 60% dari tinggi layar
+                  screenWidth * 4 / 3; // Tinggi sesuai rasio 3:4
 
                 if (!controller.isCameraInitialized.value) {
                   return Container(
@@ -338,28 +296,26 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                     child: Stack(
                       fit: StackFit.expand,
                       children: [
-                        // Preview langsung dipaksa ke rasio 4:3 (portrait = 3:4), tanpa framing overlay.
-                        Center(
-                          child: AspectRatio(
-                            aspectRatio: 3 / 4,
-                            child: ClipRect(
-                              child: FittedBox(
-                                fit: BoxFit.cover,
-                                alignment: Alignment.center,
-                                child: SizedBox(
-                                  width: controller
-                                      .cameraController!
-                                      .value
-                                      .previewSize!
-                                      .height,
-                                  height: controller
-                                      .cameraController!
-                                      .value
-                                      .previewSize!
-                                      .width,
-                                  child: CameraPreview(
-                                    controller.cameraController!,
-                                  ),
+                        // Preview dengan rasio 3:4 tanpa padding atas/bawah.
+                        AspectRatio(
+                          aspectRatio: 3 / 4,
+                          child: ClipRect(
+                            child: FittedBox(
+                              fit: BoxFit.cover,
+                              alignment: Alignment.center,
+                              child: SizedBox(
+                                width: controller
+                                    .cameraController!
+                                    .value
+                                    .previewSize!
+                                    .height,
+                                height: controller
+                                    .cameraController!
+                                    .value
+                                    .previewSize!
+                                    .width,
+                                child: CameraPreview(
+                                  controller.cameraController!,
                                 ),
                               ),
                             ),
@@ -627,9 +583,14 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                     children: [
                       Expanded(
                         child: FilledButton.icon(
-                          onPressed: isBusy ? null : _handleNextTree,
+                          onPressed: isBusy
+                              ? null
+                              : () {
+                                  HapticFeedback.mediumImpact();
+                                  _handleNextTree();
+                                },
                           style: FilledButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -647,9 +608,14 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: OutlinedButton.icon(
-                          onPressed: isBusy ? null : _handleFinish,
+                          onPressed: isBusy
+                              ? null
+                              : () {
+                                  HapticFeedback.heavyImpact();
+                                  _handleFinish();
+                                },
                           style: OutlinedButton.styleFrom(
-                            padding: const EdgeInsets.symmetric(vertical: 14),
+                            padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
@@ -678,9 +644,12 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                       children: [
                         Expanded(
                           child: FilledButton.icon(
-                            onPressed: controller.capturePhoto,
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              controller.capturePhoto();
+                            },
                             style: FilledButton.styleFrom(
-                              padding: const EdgeInsets.symmetric(vertical: 14),
+                              padding: const EdgeInsets.symmetric(vertical: 16),
                               backgroundColor: colorScheme.primary,
                               shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12),
@@ -698,14 +667,17 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                         ),
                         const SizedBox(width: 12),
                         OutlinedButton(
-                          onPressed: controller.cancelCapture,
+                          onPressed: () {
+                            HapticFeedback.selectionClick();
+                            controller.cancelCapture();
+                          },
                           style: OutlinedButton.styleFrom(
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                             padding: const EdgeInsets.symmetric(
                               horizontal: 16,
-                              vertical: 14,
+                              vertical: 16,
                             ),
                           ),
                           child: const Icon(Icons.close),
@@ -718,10 +690,13 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                     width: double.infinity,
                     child: FilledButton.icon(
                       onPressed: (canCapture && !isCapturing)
-                          ? _handleCapture
+                          ? () {
+                              HapticFeedback.mediumImpact();
+                              _handleCapture();
+                            }
                           : null,
                       style: FilledButton.styleFrom(
-                        padding: const EdgeInsets.symmetric(vertical: 14),
+                        padding: const EdgeInsets.symmetric(vertical: 16),
                         backgroundColor: (canCapture && !isCapturing)
                             ? null
                             : Colors.grey,
@@ -739,9 +714,9 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                               ),
                             )
                           : const Icon(Icons.play_arrow),
-                      label: Text(
+                      label: const Text(
                         'Mulai Mode Capture',
-                        style: const TextStyle(
+                        style: TextStyle(
                           fontSize: 16,
                           fontWeight: FontWeight.bold,
                         ),

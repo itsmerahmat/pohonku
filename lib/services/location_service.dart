@@ -1,5 +1,9 @@
 import 'package:geolocator/geolocator.dart';
 
+/// Service untuk mengambil lokasi GPS perangkat.
+///
+/// Menggunakan singleton pattern dan package geolocator
+/// untuk akses lokasi dengan akurasi tinggi.
 class LocationService {
   LocationService._internal();
   static final LocationService _instance = LocationService._internal();
@@ -26,7 +30,9 @@ class LocationService {
     }
 
     try {
-      return await Geolocator.getCurrentPosition(desiredAccuracy: LocationAccuracy.high);
+      return await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
     } catch (_) {
       return null;
     }
