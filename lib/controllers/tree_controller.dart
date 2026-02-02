@@ -59,6 +59,15 @@ class TreeController extends GetxController {
     return _dbService.getMaxTreeNumber(varietas, blok);
   }
 
+  /// Mengecek apakah nomor pohon sudah ada dalam varietas dan blok tertentu.
+  Future<bool> isTreeNumberExists(
+    String varietas,
+    String blok,
+    String nomorPohon,
+  ) async {
+    return _dbService.isTreeNumberExists(varietas, blok, nomorPohon);
+  }
+
   /// Menghapus data pohon dan semua file foto terkait.
   Future<void> removeTree(TreeModel tree) async {
     for (final photo in tree.photos) {

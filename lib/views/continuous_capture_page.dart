@@ -258,8 +258,8 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                     ],
                   ),
                 ),
-              // const SizedBox(height: 12),
 
+              // const SizedBox(height: 12),
               const SizedBox(height: 20),
 
               // Camera Preview (jika ready mode)
@@ -270,7 +270,7 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
 
                 final screenWidth = MediaQuery.of(context).size.width;
                 final cameraHeight =
-                  screenWidth * 4 / 3; // Tinggi sesuai rasio 3:4
+                    screenWidth * 4 / 3; // Tinggi sesuai rasio 3:4
 
                 if (!controller.isCameraInitialized.value) {
                   return Container(
@@ -445,119 +445,135 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                           final isCurrent =
                               index == controller.currentPhotoIndex.value;
 
-                          return Container(
-                            decoration: BoxDecoration(
-                              border: Border.all(
-                                color: path != null
-                                    ? Colors.green
-                                    : isCurrent
-                                    ? colorScheme.primary
-                                    : Colors.grey.shade300,
-                                width: isCurrent ? 3 : 2,
-                              ),
+                          return Material(
+                            elevation: path != null ? 2 : 0,
+                            borderRadius: BorderRadius.circular(16),
+                            child: InkWell(
+                              onTap: path != null
+                                  ? () {
+                                      _showPhotoDialog(context, path);
+                                    }
+                                  : null,
                               borderRadius: BorderRadius.circular(16),
-                              color: path == null ? Colors.grey[50] : null,
-                            ),
-                            child: path == null
-                                ? Column(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        isCurrent
-                                            ? Icons.camera_alt
-                                            : Icons.photo_camera_back,
-                                        size: 40,
-                                        color: isCurrent
-                                            ? colorScheme.primary
-                                            : Colors.grey[400],
-                                      ),
-                                      const SizedBox(height: 8),
-                                      Text(
-                                        'Foto ${index + 1}',
-                                        style: TextStyle(
-                                          fontSize: 14,
-                                          fontWeight: FontWeight.w600,
-                                          color: isCurrent
-                                              ? colorScheme.primary
-                                              : Colors.grey[600],
-                                        ),
-                                      ),
-                                      if (isProcessing) ...[
-                                        const SizedBox(height: 8),
-                                        const SizedBox(
-                                          width: 18,
-                                          height: 18,
-                                          child: CircularProgressIndicator(
-                                            strokeWidth: 2,
-                                          ),
-                                        ),
-                                        const SizedBox(height: 6),
-                                        Text(
-                                          'Memproses…',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: Colors.grey[600],
-                                          ),
-                                        ),
-                                      ] else if (isCurrent)
-                                        Text(
-                                          'Siap',
-                                          style: TextStyle(
-                                            fontSize: 11,
-                                            color: colorScheme.primary,
-                                          ),
-                                        ),
-                                    ],
-                                  )
-                                : ClipRRect(
-                                    borderRadius: BorderRadius.circular(14),
-                                    child: Stack(
-                                      fit: StackFit.expand,
-                                      children: [
-                                        Image.file(
-                                          File(path),
-                                          fit: BoxFit.cover,
-                                          cacheWidth: 600,
-                                          cacheHeight: 600,
-                                          filterQuality: FilterQuality.low,
-                                        ),
-                                        Positioned(
-                                          bottom: 8,
-                                          left: 8,
-                                          child: Container(
-                                            padding: const EdgeInsets.symmetric(
-                                              horizontal: 8,
-                                              vertical: 4,
-                                            ),
-                                            decoration: BoxDecoration(
-                                              color: Colors.green,
-                                              borderRadius:
-                                                  BorderRadius.circular(8),
-                                            ),
-                                            child: Row(
-                                              mainAxisSize: MainAxisSize.min,
-                                              children: [
-                                                const Icon(
-                                                  Icons.check_circle,
-                                                  color: Colors.white,
-                                                  size: 14,
-                                                ),
-                                                const SizedBox(width: 4),
-                                                Text(
-                                                  'Foto ${index + 1}',
-                                                  style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 11,
-                                                    fontWeight: FontWeight.bold,
-                                                  ),
-                                                ),
-                                              ],
-                                            ),
-                                          ),
-                                        ),
-                                      ],
-                                    ),
+                              child: Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(
+                                    color: path != null
+                                        ? Colors.green
+                                        : isCurrent
+                                        ? colorScheme.primary
+                                        : Colors.grey.shade300,
+                                    width: isCurrent ? 3 : 2,
                                   ),
+                                  borderRadius: BorderRadius.circular(16),
+                                  color: path == null ? Colors.grey[50] : null,
+                                ),
+                                child: path == null
+                                    ? Column(
+                                        mainAxisAlignment:
+                                            MainAxisAlignment.center,
+                                        children: [
+                                          Icon(
+                                            isCurrent
+                                                ? Icons.camera_alt
+                                                : Icons.photo_camera_back,
+                                            size: 40,
+                                            color: isCurrent
+                                                ? colorScheme.primary
+                                                : Colors.grey[400],
+                                          ),
+                                          const SizedBox(height: 8),
+                                          Text(
+                                            'Foto ${index + 1}',
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.w600,
+                                              color: isCurrent
+                                                  ? colorScheme.primary
+                                                  : Colors.grey[600],
+                                            ),
+                                          ),
+                                          if (isProcessing) ...[
+                                            const SizedBox(height: 8),
+                                            const SizedBox(
+                                              width: 18,
+                                              height: 18,
+                                              child: CircularProgressIndicator(
+                                                strokeWidth: 2,
+                                              ),
+                                            ),
+                                            const SizedBox(height: 6),
+                                            Text(
+                                              'Memproses…',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: Colors.grey[600],
+                                              ),
+                                            ),
+                                          ] else if (isCurrent)
+                                            Text(
+                                              'Siap',
+                                              style: TextStyle(
+                                                fontSize: 11,
+                                                color: colorScheme.primary,
+                                              ),
+                                            ),
+                                        ],
+                                      )
+                                    : ClipRRect(
+                                        borderRadius: BorderRadius.circular(14),
+                                        child: Stack(
+                                          fit: StackFit.expand,
+                                          children: [
+                                            Image.file(
+                                              File(path),
+                                              fit: BoxFit.cover,
+                                              cacheWidth: 600,
+                                              cacheHeight: 600,
+                                              filterQuality: FilterQuality.low,
+                                            ),
+                                            Positioned(
+                                              bottom: 8,
+                                              left: 8,
+                                              child: Container(
+                                                padding:
+                                                    const EdgeInsets.symmetric(
+                                                      horizontal: 8,
+                                                      vertical: 4,
+                                                    ),
+                                                decoration: BoxDecoration(
+                                                  color: Colors.green,
+                                                  borderRadius:
+                                                      BorderRadius.circular(8),
+                                                ),
+                                                child: Row(
+                                                  mainAxisSize:
+                                                      MainAxisSize.min,
+                                                  children: [
+                                                    const Icon(
+                                                      Icons.check_circle,
+                                                      color: Colors.white,
+                                                      size: 14,
+                                                    ),
+                                                    const SizedBox(width: 4),
+                                                    Text(
+                                                      'Foto ${index + 1}',
+                                                      style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 11,
+                                                        fontWeight:
+                                                            FontWeight.bold,
+                                                      ),
+                                                    ),
+                                                  ],
+                                                ),
+                                              ),
+                                            ),
+                                          ],
+                                        ),
+                                      ),
+                              ),
+                            ),
                           );
                         },
                       );
@@ -582,22 +598,21 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                   return Row(
                     children: [
                       Expanded(
-                        child: FilledButton.icon(
+                        child: OutlinedButton.icon(
                           onPressed: isBusy
                               ? null
                               : () {
-                                  HapticFeedback.mediumImpact();
-                                  _handleNextTree();
+                                  controller.retakeCurrentTree();
                                 },
-                          style: FilledButton.styleFrom(
+                          style: OutlinedButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          icon: const Icon(Icons.navigate_next),
+                          icon: const Icon(Icons.refresh),
                           label: const Text(
-                            'Berikutnya',
+                            'Retake',
                             style: TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -607,22 +622,30 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                       ),
                       const SizedBox(width: 12),
                       Expanded(
-                        child: OutlinedButton.icon(
+                        child: FilledButton.icon(
                           onPressed: isBusy
                               ? null
-                              : () {
-                                  HapticFeedback.heavyImpact();
-                                  _handleFinish();
+                              : () async {
+                                  await controller.saveAndContinue();
                                 },
-                          style: OutlinedButton.styleFrom(
+                          style: FilledButton.styleFrom(
                             padding: const EdgeInsets.symmetric(vertical: 16),
                             shape: RoundedRectangleBorder(
                               borderRadius: BorderRadius.circular(12),
                             ),
                           ),
-                          icon: const Icon(Icons.check),
+                          icon: isBusy
+                              ? const SizedBox(
+                                  width: 20,
+                                  height: 20,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Icon(Icons.arrow_forward),
                           label: Text(
-                            isBusy ? 'Menyimpan…' : 'Selesai',
+                            isBusy ? 'Menyimpan...' : 'Berikutnya',
                             style: const TextStyle(
                               fontSize: 16,
                               fontWeight: FontWeight.bold,
@@ -645,7 +668,6 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                         Expanded(
                           child: FilledButton.icon(
                             onPressed: () {
-                              HapticFeedback.lightImpact();
                               controller.capturePhoto();
                             },
                             style: FilledButton.styleFrom(
@@ -668,7 +690,6 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                         const SizedBox(width: 12),
                         OutlinedButton(
                           onPressed: () {
-                            HapticFeedback.selectionClick();
                             controller.cancelCapture();
                           },
                           style: OutlinedButton.styleFrom(
@@ -691,7 +712,6 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
                     child: FilledButton.icon(
                       onPressed: (canCapture && !isCapturing)
                           ? () {
-                              HapticFeedback.mediumImpact();
                               _handleCapture();
                             }
                           : null,
@@ -738,33 +758,65 @@ class _ContinuousCapturePageState extends State<ContinuousCapturePage> {
     await controller.startContinuousCapture();
   }
 
-  void _handleNextTree() {
-    _idPohonController.clear();
-    controller.startNewTree();
+  void _showPhotoDialog(BuildContext context, String photoPath) {
+    showDialog(
+      context: context,
+      builder: (_) => Dialog(
+        backgroundColor: Colors.transparent,
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(16),
+              child: Image.file(File(photoPath), fit: BoxFit.contain),
+            ),
+            const SizedBox(height: 16),
+            IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(Icons.close, color: Colors.white, size: 32),
+              style: IconButton.styleFrom(
+                backgroundColor: Colors.black.withValues(alpha: 0.5),
+              ),
+              tooltip: 'Tutup',
+            ),
+          ],
+        ),
+      ),
+    );
   }
 
-  void _handleFinish() {
-    final count = controller.savedTreesCount.value;
+  Future<void> _handleFinish() async {
+    // Simpan pohon terakhir jika ada foto yang belum tersimpan
+    final photoIndex = controller.currentPhotoIndex.value;
+    final isCompleted = photoIndex >= controller.totalPhotos;
 
-    // Kembali ke halaman depan
-    Get.until((route) => route.isFirst);
+    if (isCompleted) {
+      // Jika sudah selesai 4 foto tapi belum disimpan, simpan dulu
+      await controller.saveAndFinish();
+    } else {
+      // Jika belum selesai, langsung kembali tanpa simpan
+      final count = controller.savedTreesCount.value;
 
-    // Refresh data di home page
-    try {
-      final groupController = Get.find<GroupController>();
-      groupController.loadGroups();
-    } catch (e) {
-      // GroupController tidak ditemukan
+      // Kembali ke halaman depan
+      Get.until((route) => route.isFirst);
+
+      // Refresh data di home page
+      try {
+        final groupController = Get.find<GroupController>();
+        groupController.loadGroups();
+      } catch (e) {
+        // GroupController tidak ditemukan
+      }
+
+      Get.snackbar(
+        'Sesi Selesai!',
+        '$count pohon berhasil disimpan',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.green,
+        colorText: Colors.white,
+        icon: const Icon(Icons.check_circle, color: Colors.white),
+        duration: const Duration(seconds: 3),
+      );
     }
-
-    Get.snackbar(
-      'Sesi Selesai!',
-      '$count pohon berhasil disimpan',
-      snackPosition: SnackPosition.BOTTOM,
-      backgroundColor: Colors.green,
-      colorText: Colors.white,
-      icon: const Icon(Icons.check_circle, color: Colors.white),
-      duration: const Duration(seconds: 3),
-    );
   }
 }

@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:skeletonizer/skeletonizer.dart';
 
@@ -247,7 +246,6 @@ class _TreeListPageState extends State<TreeListPage> {
                   const SizedBox(height: 24),
                   OutlinedButton.icon(
                     onPressed: () {
-                      HapticFeedback.lightImpact();
                       Get.toNamed(
                         '/session',
                         arguments: {'varietas': varietas, 'blok': blok},
@@ -264,7 +262,6 @@ class _TreeListPageState extends State<TreeListPage> {
 
         return RefreshIndicator(
           onRefresh: () async {
-            HapticFeedback.mediumImpact();
             await _loadTrees();
           },
           child: ListView.builder(
@@ -291,7 +288,6 @@ class _TreeListPageState extends State<TreeListPage> {
                   child: TreeCard(
                     tree: tree,
                     onTap: () async {
-                      HapticFeedback.selectionClick();
                       final result = await Get.toNamed(
                         '/detail',
                         arguments: tree,
@@ -310,10 +306,15 @@ class _TreeListPageState extends State<TreeListPage> {
       }),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          HapticFeedback.mediumImpact();
+          // Ambil photoCount dari pohon pertama jika ada
+          final photoCount = trees.isNotEmpty ? trees.first.photos.length : 4;
           Get.toNamed(
             '/session',
-            arguments: {'varietas': varietas, 'blok': blok},
+            arguments: {
+              'varietas': varietas,
+              'blok': blok,
+              'photoCount': photoCount,
+            },
           );
         },
         icon: const Icon(Icons.add),

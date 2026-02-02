@@ -1,7 +1,6 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:skeletonizer/skeletonizer.dart';
@@ -509,7 +508,6 @@ class _HomePageState extends State<HomePage> {
                         count: count,
                         lastUpdated: lastUpdated,
                         onTap: () {
-                          HapticFeedback.selectionClick();
                           Get.toNamed(
                             '/trees',
                             arguments: {'varietas': varietas, 'blok': blok},
@@ -526,7 +524,6 @@ class _HomePageState extends State<HomePage> {
       ),
       floatingActionButton: FloatingActionButton.extended(
         onPressed: () {
-          HapticFeedback.mediumImpact();
           Get.toNamed('/session');
         },
         icon: const Icon(Icons.add),

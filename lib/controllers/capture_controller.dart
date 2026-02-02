@@ -5,12 +5,14 @@ import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
+import 'package:vibration/vibration.dart';
 import 'package:get/get.dart';
 
 import '../models/photo_model.dart';
 import '../models/tree_model.dart';
 import '../services/exif_service.dart';
 import '../services/photo_service.dart';
+import 'group_controller.dart';
 import 'tree_controller.dart';
 
 /// Controller untuk mode capture foto kontinyu.
@@ -230,6 +232,25 @@ class CaptureController extends GetxController {
       return;
     }
 
+    // Cek ID duplikat sebelum mulai capture
+    final isDuplicate = await _treeController.isTreeNumberExists(
+      varietas,
+      blok,
+      currentTreeId.value,
+    );
+
+    if (isDuplicate) {
+      Get.snackbar(
+        'ID Sudah Ada',
+        'ID Pohon ${currentTreeId.value} sudah digunakan di $varietas - Blok $blok. Gunakan ID berbeda.',
+        snackPosition: SnackPosition.BOTTOM,
+        backgroundColor: Colors.red,
+        colorText: Colors.white,
+        duration: const Duration(seconds: 4),
+      );
+      return;
+    }
+
     // Cek dan request permission lokasi
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
@@ -349,6 +370,9 @@ class CaptureController extends GetxController {
       // Capture foto LANGSUNG tanpa delay GPS
       final image = await controller.takePicture();
 
+      // Haptic feedback saat foto berhasil diambil
+      Vibration.vibrate(duration: 200);
+
       // Snapshot GPS saat tombol ditekan (biar EXIF konsisten per foto)
       final double? latAtCapture = currentLatitude;
       final double? lngAtCapture = currentLongitude;
@@ -401,11 +425,12 @@ class CaptureController extends GetxController {
 
       _pendingSaveFutures.add(saveFuture);
 
-      // Jika sudah foto terakhir, finalisasi DI BACKGROUND agar UI tidak freeze.
+      // Jika sudah foto terakhir, tunggu semua foto selesai diproses lalu tampilkan review
       if (currentPhotoIndex.value >= totalPhotos) {
         isReady.value = false;
         isFinalizing.value = true;
-        unawaited(_finalizeAfterLastPhoto());
+        // Tunggu semua foto selesai disimpan, lalu tampilkan review
+        unawaited(_waitAndShowReview());
       }
     } catch (e) {
       Get.snackbar(
@@ -421,11 +446,9 @@ class CaptureController extends GetxController {
     }
   }
 
-  Future<void> _finalizeAfterLastPhoto() async {
+  Future<void> _waitAndShowReview() async {
     try {
-      // Tunggu semua save futures selesai dengan timeout.
-      // Native compression (flutter_image_compress) jauh lebih cepat,
-      // tapi tetap berikan buffer timeout yang cukup.
+      // Tunggu semua save futures selesai dengan timeout
       try {
         await Future.wait(_pendingSaveFutures).timeout(
           const Duration(seconds: 20),
@@ -439,18 +462,62 @@ class CaptureController extends GetxController {
       }
       _pendingSaveFutures.clear();
 
-      await _saveCurrentTree();
-
-      if (autoIdMode) {
-        startNewTree();
-        await startContinuousCapture();
-      }
-    } finally {
       isFinalizing.value = false;
-      if (!autoIdMode) {
-        // Tetap di halaman, user bisa Next/Finish.
-      }
+    } catch (e) {
+      debugPrint('Error in review: $e');
+      isFinalizing.value = false;
     }
+  }
+
+  /// Retake foto untuk pohon saat ini
+  void retakeCurrentTree() {
+    // Reset semua foto pohon saat ini
+    currentPhotos.assignAll(List<String?>.filled(totalPhotos, null));
+    isProcessingPhotos.assignAll(List<bool>.filled(totalPhotos, false));
+    currentPhotoIndex.value = 0;
+    _pendingSaveFutures.clear();
+
+    // Mulai ulang capture
+    startContinuousCapture();
+  }
+
+  /// Simpan pohon dan lanjut ke pohon berikutnya
+  Future<void> saveAndContinue() async {
+    isFinalizing.value = true;
+    await _saveCurrentTree();
+    isFinalizing.value = false;
+
+    if (autoIdMode) {
+      startNewTree();
+      await startContinuousCapture();
+    } else {
+      // Mode manual, reset untuk input ID baru
+      startNewTree();
+    }
+  }
+
+  /// Simpan pohon dan selesai (kembali ke home)
+  Future<void> saveAndFinish() async {
+    isFinalizing.value = true;
+    await _saveCurrentTree();
+    isFinalizing.value = false;
+
+    // Refresh home page
+    final groupController = Get.find<GroupController>();
+    await groupController.loadGroups();
+
+    // Kembali ke home
+    Get.until((route) => route.isFirst);
+
+    Get.snackbar(
+      'Selesai!',
+      'Berhasil menyimpan ${savedTreesCount.value} pohon',
+      snackPosition: SnackPosition.BOTTOM,
+      backgroundColor: Colors.green,
+      colorText: Colors.white,
+      icon: const Icon(Icons.check_circle, color: Colors.white),
+      duration: const Duration(seconds: 3),
+    );
   }
 
   /// Simpan pohon saat ini ke database

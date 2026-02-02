@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:get/get.dart';
 
@@ -22,6 +21,8 @@ class _SessionFormPageState extends State<SessionFormPage> {
   bool _isGpsEnabled = false;
   bool _checkingGps = true;
   bool _autoIdMode = false;
+  bool _isFromExistingGroup =
+      false; // Flag untuk disable input jika dari grup existing
 
   @override
   void initState() {
@@ -32,6 +33,12 @@ class _SessionFormPageState extends State<SessionFormPage> {
     if (args != null) {
       _varietasController.text = args['varietas'] ?? '';
       _blokController.text = args['blok'] ?? '';
+      _isFromExistingGroup = true; // Disable input jika dari grup existing
+
+      // Pre-fill photoCount dari grup existing jika ada
+      if (args['photoCount'] != null) {
+        _photoCountController.text = args['photoCount'].toString();
+      }
     }
 
     _checkGpsStatus();
@@ -160,10 +167,14 @@ class _SessionFormPageState extends State<SessionFormPage> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _varietasController,
-                      decoration: const InputDecoration(
+                      enabled: !_isFromExistingGroup,
+                      decoration: InputDecoration(
                         labelText: 'Varietas Pohon',
                         hintText: 'Contoh: Sawit',
-                        prefixIcon: Icon(Icons.park),
+                        prefixIcon: const Icon(Icons.park),
+                        suffixIcon: _isFromExistingGroup
+                            ? const Icon(Icons.lock, size: 20)
+                            : null,
                       ),
                       validator: (value) =>
                           value == null || value.isEmpty ? 'Wajib diisi' : null,
@@ -171,10 +182,14 @@ class _SessionFormPageState extends State<SessionFormPage> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _blokController,
-                      decoration: const InputDecoration(
+                      enabled: !_isFromExistingGroup,
+                      decoration: InputDecoration(
                         labelText: 'Blok',
                         hintText: 'Contoh: A1',
-                        prefixIcon: Icon(Icons.grid_on),
+                        prefixIcon: const Icon(Icons.grid_on),
+                        suffixIcon: _isFromExistingGroup
+                            ? const Icon(Icons.lock, size: 20)
+                            : null,
                       ),
                       validator: (value) =>
                           value == null || value.isEmpty ? 'Wajib diisi' : null,
@@ -182,11 +197,15 @@ class _SessionFormPageState extends State<SessionFormPage> {
                     const SizedBox(height: 16),
                     TextFormField(
                       controller: _photoCountController,
+                      enabled: !_isFromExistingGroup,
                       keyboardType: TextInputType.number,
-                      decoration: const InputDecoration(
+                      decoration: InputDecoration(
                         labelText: 'Jumlah Foto per Pohon',
                         hintText: 'Minimal 4, harus genap (mis. 4, 6, 8)',
-                        prefixIcon: Icon(Icons.photo_library),
+                        prefixIcon: const Icon(Icons.photo_library),
+                        suffixIcon: _isFromExistingGroup
+                            ? const Icon(Icons.lock, size: 20)
+                            : null,
                       ),
                       validator: (value) {
                         final trimmed = value?.trim() ?? '';
@@ -231,7 +250,9 @@ class _SessionFormPageState extends State<SessionFormPage> {
                                 ),
                                 const SizedBox(height: 2),
                                 Text(
-                                  'ID pohon otomatis increment',
+                                  _isFromExistingGroup && _autoIdMode
+                                      ? 'ID otomatis melanjutkan dari pohon terakhir'
+                                      : 'ID pohon otomatis increment',
                                   style: TextStyle(
                                     fontSize: 12,
                                     color: colorScheme.onPrimaryContainer
@@ -244,7 +265,6 @@ class _SessionFormPageState extends State<SessionFormPage> {
                           Switch(
                             value: _autoIdMode,
                             onChanged: (value) {
-                              HapticFeedback.selectionClick();
                               setState(() => _autoIdMode = value);
                             },
                           ),
@@ -330,7 +350,6 @@ class _SessionFormPageState extends State<SessionFormPage> {
               //   ),
               // ),
               // const SizedBox(height: 24),
-
               const SizedBox(height: 96),
             ],
           ),
@@ -342,7 +361,6 @@ class _SessionFormPageState extends State<SessionFormPage> {
           width: double.infinity,
           child: FilledButton.icon(
             onPressed: () {
-              HapticFeedback.mediumImpact();
               _handleStart();
             },
             style: FilledButton.styleFrom(

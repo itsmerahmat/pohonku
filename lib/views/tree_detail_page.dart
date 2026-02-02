@@ -1,7 +1,6 @@
 import 'dart:io';
 
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import 'package:path/path.dart' as path;
@@ -501,7 +500,6 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
   }
 
   Future<void> _downloadPhoto(String photoPath) async {
-    HapticFeedback.lightImpact();
     try {
       // Copy file ke folder Downloads
       final fileName = path.basename(photoPath);
@@ -509,7 +507,6 @@ class _TreeDetailPageState extends State<TreeDetailPage> {
 
       await File(photoPath).copy(downloadPath);
 
-      HapticFeedback.mediumImpact();
       Get.snackbar(
         'Berhasil!',
         'Foto berhasil disimpan ke folder Download',

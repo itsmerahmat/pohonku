@@ -241,4 +241,24 @@ class DatabaseService {
     final value = result.first['nomor_pohon']?.toString();
     return int.tryParse(value ?? '');
   }
+
+  /// Mengecek apakah nomor pohon sudah ada dalam varietas dan blok tertentu.
+  Future<bool> isTreeNumberExists(
+    String varietas,
+    String blok,
+    String nomorPohon,
+  ) async {
+    final db = await database;
+    final result = await db.rawQuery(
+      '''
+      SELECT COUNT(*) as count
+      FROM trees
+      WHERE varietas = ? AND blok = ? AND nomor_pohon = ?
+      ''',
+      [varietas, blok, nomorPohon],
+    );
+
+    final count = Sqflite.firstIntValue(result) ?? 0;
+    return count > 0;
+  }
 }
